@@ -8,12 +8,29 @@ interface Item {
   description: string;
 }
 
+interface Bus {
+  line: string;
+  destination: string;
+  departureTime: string;
+}
+
+interface BusStopData {
+  stopName: string;
+  buses: Bus[];
+}
+
 function App() {
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [newItemName, setNewItemName] = useState('')
   const [newItemDescription, setNewItemDescription] = useState('')
+  
+  // Bus stop state
+  const [busStopName, setBusStopName] = useState('')
+  const [busData, setBusData] = useState<BusStopData | null>(null)
+  const [busLoading, setBusLoading] = useState(false)
+  const [busError, setBusError] = useState<string | null>(null)
 
   // Fetch items from API
   useEffect(() => {
@@ -58,7 +75,72 @@ function App() {
 
   const handleDeleteItem = async (id: number) => {
     try {
-      await axios.delete(`/api/items/${id}`)
+   
+
+  const handleSearchBusStop = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!busStopName.trim()) {
+      setBusError('Please enter a bus stop name')
+      return
+    }
+
+    try {
+      setBusLoaStockholm Bus Tracker</h1>
+        <p>Check real-time bus arrivals from SL (Stockholms Lokaltrafik)</p>
+      </header>
+
+      <main className="App-main">
+        {error && (
+          <div className="error-banner">
+            ⚠️ {error}
+          </div>
+        )}
+
+        <section className="bus-section">
+          <h2>📝 🚌 Find Buses</h2>
+          <form onSubmit={handleSearchBusStop} className="bus-form">
+            <input
+              type="text"
+              placeholder="Enter bus stop name (e.g., Central Station)"
+              value={busStopName}
+              onChange={(e) => setBusStopName(e.target.value)}
+              className="input-field"
+            />
+            <button type="submit" className="btn btn-primary" disabled={busLoading}>
+              {busLoading ? 'Searching...' : 'Search'}
+            </button>
+          </form>
+
+          {busError && (
+            <div className="error-message">
+              {busError}
+            </div>
+          )}
+
+          {busData && (
+            <div className="bus-results">
+              <h3>{busData.stopName}</h3>
+              {busData.buses.length > 0 ? (
+                📋 <div className="buses-list">
+                  {busData.buses.map((bus, index) => (
+                    <div key={index} className="bus-card">
+                      <div className="bus-line">{bus.line}</div>
+                      <div className="bus-info">
+                        <p className="bus-destination">{bus.destination}</p>
+                        <p className="bus-time">{bus.departureTime}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="no-buses">No buses found for this stop</p>
+              )}
+            </div>
+          )}
+        </section>usLoading(false)
+    }
+  }   await axios.delete(`/api/items/${id}`)
       setItems(items.filter(item => item.id !== id))
     } catch (err) {
       setError('Failed to delete item')
