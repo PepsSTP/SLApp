@@ -75,7 +75,13 @@ function App() {
 
   const handleDeleteItem = async (id: number) => {
     try {
-   
+      await axios.delete(`/api/items/${id}`)
+      setItems(items.filter(item => item.id !== id))
+    } catch (err) {
+      setError('Failed to delete item')
+      console.error('Error deleting item:', err)
+    }
+  }
 
   const handleSearchBusStop = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -86,7 +92,23 @@ function App() {
     }
 
     try {
-      setBusLoaStockholm Bus Tracker</h1>
+      setBusLoading(true)
+      setBusError(null)
+      const response = await axios.get<BusStopData>(`/api/buses/${encodeURIComponent(busStopName)}`)
+      setBusData(response.data)
+    } catch (err) {
+      setBusError('Failed to fetch bus information. Please check the stop name and try again.')
+      setBusData(null)
+      console.error('Error fetching buses:', err)
+    } finally {
+      setBusLoading(false)
+    }
+  }
+
+  return (
+    <div className="App">
+      <header className="App-header">
+        <h1>🚀 Stockholm Bus Tracker</h1>
         <p>Check real-time bus arrivals from SL (Stockholms Lokaltrafik)</p>
       </header>
 
@@ -98,7 +120,7 @@ function App() {
         )}
 
         <section className="bus-section">
-          <h2>📝 🚌 Find Buses</h2>
+          <h2>🚌 Find Buses</h2>
           <form onSubmit={handleSearchBusStop} className="bus-form">
             <input
               type="text"
@@ -122,7 +144,7 @@ function App() {
             <div className="bus-results">
               <h3>{busData.stopName}</h3>
               {busData.buses.length > 0 ? (
-                📋 <div className="buses-list">
+                <div className="buses-list">
                   {busData.buses.map((bus, index) => (
                     <div key={index} className="bus-card">
                       <div className="bus-line">{bus.line}</div>
@@ -138,32 +160,10 @@ function App() {
               )}
             </div>
           )}
-        </section>usLoading(false)
-    }
-  }   await axios.delete(`/api/items/${id}`)
-      setItems(items.filter(item => item.id !== id))
-    } catch (err) {
-      setError('Failed to delete item')
-      console.error('Error deleting item:', err)
-    }
-  }
-
-  return (
-    <div className="App">
-      <header className="App-header">
-        <h1>🚀 Full-Stack TypeScript App</h1>
-        <p>React + Node.js + Express + TypeScript</p>
-      </header>
-
-      <main className="App-main">
-        {error && (
-          <div className="error-banner">
-            ⚠️ {error}
-          </div>
-        )}
+        </section>
 
         <section className="add-item-section">
-          <h2>Add New Item</h2>
+          <h2>📝 Add New Item</h2>
           <form onSubmit={handleAddItem} className="add-item-form">
             <input
               type="text"
@@ -187,7 +187,7 @@ function App() {
 
         <section className="items-section">
           <div className="section-header">
-            <h2>Items List</h2>
+            <h2>📋 Items List</h2>
             <button onClick={fetchItems} className="btn btn-secondary">
               🔄 Refresh
             </button>
