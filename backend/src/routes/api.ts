@@ -3,10 +3,18 @@ import { Router, Request, Response } from 'express';
 const router = Router();
 
 // Get buses for a specific stop from SL API
-router.get('/buses/:stopName', async (req: Request, res: Response) => {
-  const stopName = decodeURIComponent(req.params.stopName);
+router.get('/buses/:stopName', async (_req: Request, res: Response) => {
+  const stopName = decodeURIComponent(_req.params.stopName);
   
   try {
+    // Check if API key is configured
+    if (!process.env.SL_API_KEY) {
+      return res.status(500).json({
+        error: 'Configuration Error',
+        message: 'SL_API_KEY is not configured'
+      });
+    }
+    
     // First, search for the stop to get its ID
     const searchUrl = `https://api.sl.se/api2/typeahead/searchStops/json?searchString=${encodeURIComponent(stopName)}&apikey=${process.env.SL_API_KEY}`;
     
