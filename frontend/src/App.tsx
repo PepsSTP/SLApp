@@ -97,9 +97,27 @@ function App() {
       const response = await axios.get<BusStopData>(`/api/buses/${encodeURIComponent(busStopName)}`)
       setBusData(response.data)
     } catch (err) {
-      setBusError('Failed to fetch bus information. Please check the stop name and try again.')
-      setBusData(null)
       console.error('Error fetching buses:', err)
+      
+      // Provide more helpful error messages
+      if (axios.isAxiosError(err)) {
+        const status = err.response?.status
+        const errorData = err.response?.data as any
+        
+        if (status === 404) {
+          setBusError(`Bus stop "${busStopName}" not found. Please check the spelling and try a different name.`)
+        } else if (status === 502 || status === 503) {
+          setBusError('The SL API is currently unavailable. Please try again later.')
+        } else if (status === 500) {
+          setBusError('Server error while fetching bus information. Please try again.')
+        } else {
+          setBusError(`Failed to fetch bus information: ${errorData?.message || err.message}`)
+        }
+      } else {
+        setBusError('Network error. Please check your connection and try again.')
+      }
+      
+      setBusData(null)
     } finally {
       setBusLoading(false)
     }
