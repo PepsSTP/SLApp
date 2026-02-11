@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "orta.vscode-jest",
+    "zixuanchen.vitest-explorer",
+    "ryanluker.vscode-coverage-gutters",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-typescript-next"
+  ]
+}

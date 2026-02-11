@@ -1,4 +1,4 @@
-import { SLSite, SLDeparturesResponse, BusStopData } from '../types/sl.types';
+import { SLSite, SLDeparturesResponse, BusStopData, FormattedDeparture } from '../types/sl.types';
 import { formatDepartures, sortDeparturesByTime } from '../utils/departureFormatter';
 
 /**
@@ -67,13 +67,13 @@ class SLService {
       throw new Error(`SL API Error: Failed to fetch departures (status ${response.status})`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as SLDeparturesResponse;
     console.log('Departures API response received', {
       keys: Object.keys(data || {}),
       departureCount: Array.isArray(data.departures) ? data.departures.length : 0
     });
 
-    return data as SLDeparturesResponse;
+    return data;
   }
 
   /**
@@ -104,7 +104,7 @@ class SLService {
     const departuresData = await this.getDepartures(site.id);
 
     // Format and sort departures
-    let formattedDepartures = [];
+    let formattedDepartures: FormattedDeparture[] = [];
     if (Array.isArray(departuresData.departures)) {
       formattedDepartures = formatDepartures(departuresData.departures);
       formattedDepartures = sortDeparturesByTime(formattedDepartures);

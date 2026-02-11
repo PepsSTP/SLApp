@@ -1,0 +1,36 @@
+{
+  // Jest configuration for backend
+  "jest.autoRun": "off",
+  "jest.showCoverageOnLoad": false,
+  "jest.rootPath": "backend",
+
+  // Vitest configuration for frontend
+  "vitest.enable": true,
+  "vitest.commandLine": "npm run test --workspace=frontend",
+
+  // Coverage Gutters
+  "coverage-gutters.showLineCoverage": true,
+  "coverage-gutters.showRulerCoverage": true,
+  "coverage-gutters.coverageFileNames": [
+    "lcov.info",
+    "cov.xml",
+    "coverage.xml",
+    "jacoco.xml",
+    "coverage/lcov.info"
+  ],
+
+  // Test Explorer
+  "testExplorer.useNativeTesting": true,
+
+  // Editor
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+
+  // Files to exclude from explorer
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/coverage": true,
+    "**/dist": true
+  }
+}
