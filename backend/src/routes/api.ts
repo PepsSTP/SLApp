@@ -2,26 +2,7 @@ import { Router, Request, Response } from 'express';
 
 const router = Router();
 
-interface SearchResponse {
-  ResponseData?: Array<{ SiteId: number; Name: string }>;
-}
-
-interface DeparturesResponse {
-  ResponseData?: {
-    Buses?: Array<{
-      LineNumber: string;
-      Destination: string;
-      ExpectedDepartureTime?: string;
-      ScheduledDepartureTime: string;
-    }>;
-    Metro?: Array<{
-      LineNumber: string;
-      Destination: string;
-      ExpectedDepartureTime?: string;
-      ScheduledDepartureTime: string;
-    }>;
-  };
-}
+// Using SL Transport API types inline; old SL API response interfaces removed
 
 // Get buses for a specific stop from SL API
 router.get('/buses/:stopName', async (req: Request, res: Response): Promise<void> => {
@@ -39,53 +20,7 @@ router.get('/buses/:stopName', async (req: Request, res: Response): Promise<void
     
     console.log(`Searching for bus stop: "${stopName}"`);
     
-    // Try multiple search variations to handle case sensitivity and partial matches
-    const searchVariations = [
-      stopName,
-      stopName.toLowerCase(),
-      stopName.charAt(0).toUpperCase() + stopName.slice(1).toLowerCase(),
-    ];
     
-    let searchData: SearchResponse | null = null;
-    
-    for (const searchTerm of searchVariations) {
-      try {
-        const searchUrl = `https://api.trafiklab.se/api2/typeahead/searchStops/json?searchString=${encodeURIComponent(searchTerm)}&apikey=${process.env.SL_API_KEY}`;
-        
-        console.log(`Attempting search with term: "${searchTerm}"`);
-        const searchResponse = await fetch(searchUrl);
-
-        if (!searchResponse.ok) {
-          const body = await searchResponse.text().catch(() => '<unreadable>');
-          console.error(`SL search API error (${searchTerm})`, searchResponse.status, body);
-          continue;
-        }
-
-        searchData = (await searchResponse.json()) as SearchResponse;
-        
-        // Check if we got results
-        if (searchData.ResponseData && searchData.ResponseData.length > 0) {
-          console.log(`Found ${searchData.ResponseData.length} matches for "${searchTerm}"`);
-          break; // Success, exit the loop
-        }
-        
-        console.log(`No results for search term: "${searchTerm}"`);
-      } catch (error) {
-        console.error(`Error during search variation "${searchTerm}":`, error);
-      }
-    }
-
-    if (!searchData || !searchData.ResponseData || searchData.ResponseData.length === 0) {
-      console.warn('SL search returned no matches for any variation', { stopName, searchData });
-      res.status(404).json({
-        error: 'Not Found',
-        message: `Bus stop "${stopName}" not found. Please check the spelling and try again.`,
-        suggestions: 'Try searching with a partial name or the exact bus stop name from the SL website.'
-      });
-      return;
-    }
-    
-    // Get the first stop match
       // Use SL Transport API for stop lookup and departures (no API key required)
       console.log(`Searching transport sites for: "${stopName}"`);
       const searchUrl = `https://transport.integration.sl.se/v1/sites?name=${encodeURIComponent(stopName)}`;
@@ -133,39 +68,7 @@ router.get('/buses/:stopName', async (req: Request, res: Response): Promise<void
       return;
     }
 
-    const departuresData = (await departuresResponse.json()) as DeparturesResponse;
     
-    console.log('Departures API response received', {
-      hasBuses: !!departuresData.ResponseData?.Buses,
-      busCount: departuresData.ResponseData?.Buses?.length || 0,
-      hasMetro: !!departuresData.ResponseData?.Metro,
-      metroCount: departuresData.ResponseData?.Metro?.length || 0
-    });
-    
-    // Format the response
-    const buses: Array<{ line: string; destination: string; departureTime: string }> = [];
-    
-    // Add bus departures
-    if (departuresData.ResponseData?.Buses) {
-      buses.push(
-        ...departuresData.ResponseData.Buses.map((bus) => ({
-          line: bus.LineNumber,
-          destination: bus.Destination,
-          departureTime: bus.ExpectedDepartureTime || bus.ScheduledDepartureTime
-        }))
-      );
-    }
-    
-    // Add metro/train departures if available
-    if (departuresData.ResponseData?.Metro) {
-      buses.push(
-        ...departuresData.ResponseData.Metro.map((metro) => ({
-          line: `Metro ${metro.LineNumber}`,
-          destination: metro.Destination,
-          departureTime: metro.ExpectedDepartureTime || metro.ScheduledDepartureTime
-        }))
-      );
-    }
       const departuresData = await departuresResponse.json() as any;
       console.log('Departures API response received', { keys: Object.keys(departuresData || {}) });
 
