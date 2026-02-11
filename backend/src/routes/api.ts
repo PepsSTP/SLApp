@@ -47,11 +47,10 @@ router.get('/buses/:stopName', async (req: Request, res: Response): Promise<void
     ];
     
     let searchData: SearchResponse | null = null;
-    let lastError: string | null = null;
     
     for (const searchTerm of searchVariations) {
       try {
-        const searchUrl = `https://api.sl.se/api2/typeahead/searchStops/json?searchString=${encodeURIComponent(searchTerm)}&apikey=${process.env.SL_API_KEY}`;
+        const searchUrl = `https://api.trafiklab.se/api2/typeahead/searchStops/json?searchString=${encodeURIComponent(searchTerm)}&apikey=${process.env.SL_API_KEY}`;
         
         console.log(`Attempting search with term: "${searchTerm}"`);
         const searchResponse = await fetch(searchUrl);
@@ -59,7 +58,6 @@ router.get('/buses/:stopName', async (req: Request, res: Response): Promise<void
         if (!searchResponse.ok) {
           const body = await searchResponse.text().catch(() => '<unreadable>');
           console.error(`SL search API error (${searchTerm})`, searchResponse.status, body);
-          lastError = `API returned ${searchResponse.status}`;
           continue;
         }
 
@@ -74,7 +72,6 @@ router.get('/buses/:stopName', async (req: Request, res: Response): Promise<void
         console.log(`No results for search term: "${searchTerm}"`);
       } catch (error) {
         console.error(`Error during search variation "${searchTerm}":`, error);
-        lastError = error instanceof Error ? error.message : 'Unknown error';
       }
     }
 
@@ -89,17 +86,41 @@ router.get('/buses/:stopName', async (req: Request, res: Response): Promise<void
     }
     
     // Get the first stop match
-    const stop = searchData.ResponseData![0];
-    const stopId = stop.SiteId;
-    const finalStopName = stop.Name;
-    
-    console.log(`Found bus stop: ${finalStopName} (ID: ${stopId})`);
-    
-    // Fetch departures for this stop
-    const departuresUrl = `https://api.sl.se/api2/realtimedepartures/${stopId}/json?timewindow=30&apikey=${process.env.SL_API_KEY}`;
-    
-    console.log(`Fetching departures from: ${departuresUrl}`);
-    const departuresResponse = await fetch(departuresUrl);
+      // Use SL Transport API for stop lookup and departures (no API key required)
+      console.log(`Searching transport sites for: "${stopName}"`);
+      const searchUrl = `https://transport.integration.sl.se/v1/sites?name=${encodeURIComponent(stopName)}`;
+      console.log(`Fetching sites from: ${searchUrl}`);
+      const searchResponse = await fetch(searchUrl);
+
+      if (!searchResponse.ok) {
+        const body = await searchResponse.text().catch(() => '<unreadable>');
+        console.error('SL transport sites API error', searchResponse.status, body);
+        res.status(502).json({ error: 'SL API Error', message: 'Failed to search for stop', status: searchResponse.status });
+        return;
+      }
+
+      const sites = (await searchResponse.json()) as Array<{ id: number; name: string; alias?: string[] }>;
+
+      if (!sites || sites.length === 0) {
+        console.warn('SL transport returned no matches', { stopName, sites });
+        res.status(404).json({ error: 'Not Found', message: `Bus stop "${stopName}" not found.` });
+        return;
+      }
+
+      // Prefer exact match or alias, otherwise take the first
+      let site = sites.find(s => s.name.toLowerCase() === stopName.toLowerCase());
+      if (!site) {
+        site = sites.find(s => s.alias && s.alias.some(a => a.toLowerCase() === stopName.toLowerCase()));
+      }
+      if (!site) site = sites[0];
+
+      const stopId = site.id;
+      const finalStopName = site.name;
+      console.log(`Using site: ${finalStopName} (ID: ${stopId})`);
+
+      const departuresUrl = `https://transport.integration.sl.se/v1/sites/${stopId}/departures`;
+      console.log(`Fetching departures from: ${departuresUrl}`);
+      const departuresResponse = await fetch(departuresUrl);
 
     if (!departuresResponse.ok) {
       const body = await departuresResponse.text().catch(() => '<unreadable>');
@@ -145,6 +166,28 @@ router.get('/buses/:stopName', async (req: Request, res: Response): Promise<void
         }))
       );
     }
+      const departuresData = await departuresResponse.json() as any;
+      console.log('Departures API response received', { keys: Object.keys(departuresData || {}) });
+
+      // departuresData.departures is an array of departure objects
+      const buses: Array<{ line: string; destination: string; departureTime: string }> = [];
+      if (Array.isArray(departuresData.departures)) {
+        buses.push(...departuresData.departures.map((d: any) => {
+          const designation = d.line?.designation || d.line?.name || d.line || '';
+          const mode = d.line?.transport_mode || d.line?.transport_mode || '';
+          let lineLabel = designation;
+          if (mode === 'METRO') lineLabel = `Metro ${designation}`;
+          else if (mode === 'TRAIN') lineLabel = `Train ${designation}`;
+          else if (mode === 'TRAM') lineLabel = `Tram ${designation}`;
+          else if (mode === 'BUS') lineLabel = `${designation}`;
+
+          return {
+            line: lineLabel,
+            destination: d.destination || d.direction || '',
+            departureTime: d.expected || d.scheduled || d.display || ''
+          };
+        }));
+      }
     
     // Sort by departure time
     buses.sort((a, b) => {

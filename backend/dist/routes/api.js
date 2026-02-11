@@ -7,7 +7,7 @@ router.get('/buses/:stopName', async (req, res) => {
     const stopName = decodeURIComponent(req.params.stopName);
     try {
         // First, search for the stop to get its ID
-        const searchUrl = `https://api.sl.se/api2/typeahead/searchStops/json?searchString=${encodeURIComponent(stopName)}&apikey=${process.env.SL_API_KEY}`;
+        const searchUrl = `https://transport.integration.sl.se/v1/sites?name=${encodeURIComponent(stopName)}`;
         const searchResponse = await fetch(searchUrl);
         const searchData = await searchResponse.json();
         if (!searchData.ResponseData || searchData.ResponseData.length === 0) {
@@ -21,7 +21,7 @@ router.get('/buses/:stopName', async (req, res) => {
         const stopId = stop.SiteId;
         const finalStopName = stop.Name;
         // Fetch departures for this stop
-        const departuresUrl = `https://api.sl.se/api2/realtimedepartures/${stopId}/json?timewindow=30&apikey=${process.env.SL_API_KEY}`;
+        const departuresUrl = `https://transport.integration.sl.se/v1/sites/${stopId}/departures`;
         const departuresResponse = await fetch(departuresUrl);
         const departuresData = await departuresResponse.json();
         // Format the response
