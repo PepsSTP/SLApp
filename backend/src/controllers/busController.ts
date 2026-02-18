@@ -34,6 +34,33 @@ class BusController {
   }
 
   /**
+   * Get buses for a specific stop with departures grouped by line
+   * GET /api/buses/:stopName/grouped
+   */
+  async getBusesByStopGrouped(req: Request, res: Response): Promise<void> {
+    const stopName = decodeURIComponent(req.params.stopName);
+
+    try {
+      // Check if API key is configured (even though not currently used)
+      if (!process.env.SL_API_KEY) {
+        res.status(500).json({
+          error: 'Configuration Error',
+          message: 'SL_API_KEY is not configured'
+        });
+        return;
+      }
+
+      // Get grouped bus stop data from service
+      const busStopData = await slService.getBusStopDataGrouped(stopName);
+
+      // Send response
+      res.json(busStopData);
+    } catch (error) {
+      this.handleError(error, stopName, res);
+    }
+  }
+
+  /**
    * Centralized error handling for bus controller
    */
   private handleError(error: unknown, stopName: string, res: Response): void {

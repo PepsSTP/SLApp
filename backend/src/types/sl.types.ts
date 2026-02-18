@@ -68,3 +68,21 @@ export interface BusStopData {
   stopName: string;
   buses: FormattedDeparture[];
 }
+
+/**
+ * Grouped departure by line and destination
+ */
+export interface GroupedDeparture {
+  line: string;
+  transportMode: string;
+  destination: string;
+  departures: FormattedDeparture[];
+}
+
+/**
+ * Bus stop data with grouped departures
+ */
+export interface BusStopDataGrouped {
+  stopName: string;
+  groupedDepartures: GroupedDeparture[];
+}

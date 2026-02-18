@@ -1,5 +1,6 @@
-import { SLSite, SLDeparturesResponse, BusStopData, FormattedDeparture } from '../types/sl.types';
+import { SLSite, SLDeparturesResponse, BusStopData, FormattedDeparture, BusStopDataGrouped } from '../types/sl.types';
 import { formatDepartures, sortDeparturesByTime } from '../utils/departureFormatter';
+import { groupDeparturesByLine } from '../utils/lineGrouper';
 
 /**
  * SL Transport API Service
@@ -56,7 +57,7 @@ class SLService {
    * Get departures for a specific site ID
    */
   async getDepartures(siteId: number): Promise<SLDeparturesResponse> {
-    const departuresUrl = `${this.baseUrl}/sites/${siteId}/departures`;
+    const departuresUrl = `${this.baseUrl}/sites/${siteId}/departures?timewindow=60`;
     console.log(`Fetching departures from: ${departuresUrl}`);
 
     const response = await fetch(departuresUrl);
@@ -115,6 +116,50 @@ class SLService {
     return {
       stopName: site.name,
       buses: formattedDepartures.slice(0, maxResults)
+    };
+  }
+
+  /**
+   * Get bus stop data with departures grouped by line
+   * High-level method that groups departures by line and limits to maxPerLine per line
+   */
+  async getBusStopDataGrouped(stopName: string, maxPerLine: number = 10): Promise<BusStopDataGrouped> {
+    console.log(`Searching for bus stop (grouped): "${stopName}"`);
+
+    // Search for the stop
+    const sites = await this.searchSites(stopName);
+
+    if (!sites || sites.length === 0) {
+      console.warn('SL transport returned no matches', { stopName });
+      throw new Error(`Bus stop "${stopName}" not found`);
+    }
+
+    // Find best matching site
+    const site = this.findBestMatch(sites, stopName);
+
+    if (!site) {
+      throw new Error(`Bus stop "${stopName}" not found`);
+    }
+
+    console.log(`Using site: ${site.name} (ID: ${site.id})`);
+
+    // Get departures
+    const departuresData = await this.getDepartures(site.id);
+
+    // Format departures
+    let formattedDepartures: FormattedDeparture[] = [];
+    if (Array.isArray(departuresData.departures)) {
+      formattedDepartures = formatDepartures(departuresData.departures);
+    }
+
+    // Group departures by line
+    const groupedDepartures = groupDeparturesByLine(formattedDepartures, maxPerLine);
+
+    console.log(`Returning ${groupedDepartures.length} line groups for ${site.name}`);
+
+    return {
+      stopName: site.name,
+      groupedDepartures
     };
   }
 }
