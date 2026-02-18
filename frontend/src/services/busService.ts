@@ -1,19 +1,39 @@
 import axios, { AxiosError } from 'axios';
-import { BusStopData, ApiErrorResponse } from '../types/bus.types';
+import { BusStopData, ApiErrorResponse, BusStopDataGrouped } from '../types/bus.types';
 
 /**
  * Bus API Service
  * Handles all HTTP requests related to bus information
  */
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
+
 class BusService {
   /**
    * Fetch bus stop data by stop name
    */
   async getBusStopData(stopName: string): Promise<BusStopData> {
     const response = await axios.get<BusStopData>(
-      `/api/buses/${encodeURIComponent(stopName)}`
+      `${API_BASE}/api/buses/${encodeURIComponent(stopName)}`
     );
     return response.data;
+  }
+
+  /**
+   * Fetch bus stop data with departures grouped by line
+   */
+  async getBusStopDataGrouped(stopName: string): Promise<BusStopDataGrouped> {
+    const response = await axios.get<BusStopDataGrouped>(
+      `${API_BASE}/api/buses/${encodeURIComponent(stopName)}/grouped`
+    );
+    return response.data;
+  }
+
+  /**
+   * Fetch multiple bus stops in parallel with grouped departures
+   */
+  async getMultipleStops(stopNames: string[]): Promise<BusStopDataGrouped[]> {
+    const promises = stopNames.map(name => this.getBusStopDataGrouped(name));
+    return Promise.all(promises);
   }
 
   /**
