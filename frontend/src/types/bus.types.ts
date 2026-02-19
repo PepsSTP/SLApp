@@ -20,6 +20,24 @@ export interface BusStopData {
 }
 
 /**
+ * Grouped departure by line and destination
+ */
+export interface GroupedDeparture {
+  line: string;
+  transportMode: string;
+  destination: string;
+  departures: Bus[];
+}
+
+/**
+ * Bus stop data with grouped departures
+ */
+export interface BusStopDataGrouped {
+  stopName: string;
+  groupedDepartures: GroupedDeparture[];
+}
+
+/**
  * API error response structure
  */
 export interface ApiErrorResponse {
