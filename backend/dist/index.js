@@ -8,14 +8,29 @@ const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const express_rate_limit_1 = __importDefault(require("express-rate-limit"));
 const api_1 = __importDefault(require("./routes/api"));
 // Load environment variables
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 const port = process.env.PORT || 3001;
+// Restrict CORS to the frontend origin
+const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
+const corsOptions = {
+    origin: allowedOrigin,
+    methods: ['GET'],
+};
+// Rate limit: max 60 requests per minute per IP
+const limiter = (0, express_rate_limit_1.default)({
+    windowMs: 60 * 1000,
+    max: 60,
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 // Middleware
 app.use((0, helmet_1.default)()); // Security headers
-app.use((0, cors_1.default)()); // Enable CORS
+app.use((0, cors_1.default)(corsOptions)); // Restricted CORS
+app.use(limiter); // Rate limiting
 app.use((0, morgan_1.default)('dev')); // Logging
 app.use(express_1.default.json()); // Parse JSON bodies
 app.use(express_1.default.urlencoded({ extended: true })); // Parse URL-encoded bodies
