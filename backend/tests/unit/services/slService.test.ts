@@ -270,5 +270,78 @@ describe('SLService', () => {
         expect(typeof bus.departureTime).toBe('string');
       });
     });
+
+    it('should throw error when findBestMatch returns null', async () => {
+      // Return sites that won't match the search term
+      const unmatchableSites = [{ id: 9999, name: 'Somewhere Else', alias: [] }];
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => unmatchableSites,
+      });
+
+      // findBestMatch falls back to first result, so mock a spy to return null
+      const spy = jest.spyOn(slService, 'findBestMatch').mockReturnValueOnce(null);
+
+      await expect(slService.getBusStopData('Nowhere')).rejects.toThrow('not found');
+
+      spy.mockRestore();
+    });
+  });
+
+  describe('getBusStopDataGrouped', () => {
+    it('should return grouped departures for a valid stop', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSites,
+      });
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockDeparturesResponse,
+      });
+
+      const result = await slService.getBusStopDataGrouped('T-Centralen');
+
+      expect(result.stopName).toBe('T-Centralen');
+      expect(result.groupedDepartures).toBeDefined();
+      expect(Array.isArray(result.groupedDepartures)).toBe(true);
+    });
+
+    it('should throw error when stop not found', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => [],
+      });
+
+      await expect(slService.getBusStopDataGrouped('Unknown')).rejects.toThrow('not found');
+    });
+
+    it('should return empty groupedDepartures for stop with no departures', async () => {
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSites,
+      });
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockEmptyDeparturesResponse,
+      });
+
+      const result = await slService.getBusStopDataGrouped('T-Centralen');
+
+      expect(result.groupedDepartures).toEqual([]);
+    });
+
+    it('should throw error when findBestMatch returns null', async () => {
+      const unmatchableSites = [{ id: 9999, name: 'Somewhere Else', alias: [] }];
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => unmatchableSites,
+      });
+
+      const spy = jest.spyOn(slService, 'findBestMatch').mockReturnValueOnce(null);
+
+      await expect(slService.getBusStopDataGrouped('Nowhere')).rejects.toThrow('not found');
+
+      spy.mockRestore();
+    });
   });
 });
