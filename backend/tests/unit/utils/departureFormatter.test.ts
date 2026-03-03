@@ -139,6 +139,52 @@ describe('departureFormatter', () => {
 
       expect(result.line).toBe('');
     });
+
+    it('should use line.name when designation is missing', () => {
+      const departure: SLDeparture = {
+        line: { name: 'Roslagsbanan', transport_mode: 'TRAIN' },
+        destination: 'Kårsta',
+        expected: '2024-01-15T10:30:00',
+      };
+
+      const result = formatDeparture(departure);
+
+      expect(result.line).toBe('Train Roslagsbanan');
+    });
+
+    it('should handle missing transport_mode on line object', () => {
+      const departure: SLDeparture = {
+        line: { designation: '4' },
+        destination: 'Gullmarsplan',
+        expected: '2024-01-15T10:30:00',
+      };
+
+      const result = formatDeparture(departure);
+
+      expect(result.line).toBe('4');
+    });
+
+    it('should return empty destination when both destination and direction are missing', () => {
+      const departure: SLDeparture = {
+        line: { designation: '4', transport_mode: 'BUS' },
+        expected: '2024-01-15T10:30:00',
+      };
+
+      const result = formatDeparture(departure);
+
+      expect(result.destination).toBe('');
+    });
+
+    it('should return empty departureTime when all time fields are missing', () => {
+      const departure: SLDeparture = {
+        line: { designation: '4', transport_mode: 'BUS' },
+        destination: 'Gullmarsplan',
+      };
+
+      const result = formatDeparture(departure);
+
+      expect(result.departureTime).toBe('');
+    });
   });
 
   describe('formatDepartures', () => {

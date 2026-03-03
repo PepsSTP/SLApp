@@ -200,4 +200,68 @@ describe('BusController', () => {
       });
     });
   });
+
+  describe('getBusesByStopGrouped', () => {
+    const mockGroupedData = {
+      stopName: 'T-Centralen',
+      groupedDepartures: [
+        {
+          line: 'Metro 1',
+          transportMode: 'METRO',
+          destination: 'Fruängen',
+          departures: [{ line: 'Metro 1', destination: 'Fruängen', departureTime: '2024-01-15T10:25:00' }],
+        },
+      ],
+    };
+
+    it('should return grouped bus stop data successfully', async () => {
+      mockRequest = { params: { stopName: 'T-Centralen' } };
+      (slService.getBusStopDataGrouped as jest.Mock).mockResolvedValue(mockGroupedData);
+
+      await busController.getBusesByStopGrouped(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+
+      expect(jsonMock).toHaveBeenCalledWith(mockGroupedData);
+    });
+
+    it('should return 500 if API key is not configured', async () => {
+      delete process.env.SL_API_KEY;
+      mockRequest = { params: { stopName: 'T-Centralen' } };
+
+      await busController.getBusesByStopGrouped(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+
+      expect(statusMock).toHaveBeenCalledWith(500);
+    });
+
+    it('should return 404 when stop is not found', async () => {
+      mockRequest = { params: { stopName: 'Unknown Station' } };
+      (slService.getBusStopDataGrouped as jest.Mock).mockRejectedValue(
+        new Error('Bus stop "Unknown Station" not found')
+      );
+
+      await busController.getBusesByStopGrouped(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+
+      expect(statusMock).toHaveBeenCalledWith(404);
+    });
+
+    it('should decode URI-encoded stop names', async () => {
+      mockRequest = { params: { stopName: 'T-Centralen%20Station' } };
+      (slService.getBusStopDataGrouped as jest.Mock).mockResolvedValue(mockGroupedData);
+
+      await busController.getBusesByStopGrouped(
+        mockRequest as Request,
+        mockResponse as Response
+      );
+
+      expect(slService.getBusStopDataGrouped).toHaveBeenCalledWith('T-Centralen Station');
+    });
+  });
 });
