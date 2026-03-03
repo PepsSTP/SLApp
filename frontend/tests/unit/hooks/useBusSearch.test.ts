@@ -1,12 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { Mocked } from 'vitest';
+import type { FormEvent } from 'react';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useBusSearch } from '../../../src/hooks/useBusSearch';
 import busService from '../../../src/services/busService';
 import { mockBusStopData } from '../../fixtures/mockBusData';
+import type { BusStopData } from '../../../src/types/bus.types';
 
 // Mock busService
 vi.mock('../../../src/services/busService');
-const mockedBusService = busService as jest.Mocked<typeof busService>;
+const mockedBusService = busService as Mocked<typeof busService>;
 
 describe('useBusSearch', () => {
   beforeEach(() => {
@@ -75,11 +78,11 @@ describe('useBusSearch', () => {
     });
 
     it('should set loading state during search', async () => {
-      let resolveSearch: (value: any) => void;
-      const searchPromise = new Promise((resolve) => {
+      let resolveSearch: (value: BusStopData) => void;
+      const searchPromise = new Promise<BusStopData>((resolve) => {
         resolveSearch = resolve;
       });
-      mockedBusService.getBusStopData.mockReturnValue(searchPromise as any);
+      mockedBusService.getBusStopData.mockReturnValue(searchPromise);
 
       const { result } = renderHook(() => useBusSearch());
 
@@ -159,7 +162,7 @@ describe('useBusSearch', () => {
       const { result } = renderHook(() => useBusSearch());
       const mockEvent = {
         preventDefault: vi.fn(),
-      } as any;
+      } as unknown as FormEvent;
 
       mockedBusService.getBusStopData.mockResolvedValue(mockBusStopData);
 
@@ -178,7 +181,7 @@ describe('useBusSearch', () => {
       mockedBusService.getBusStopData.mockResolvedValue(mockBusStopData);
 
       const { result } = renderHook(() => useBusSearch());
-      const mockEvent = { preventDefault: vi.fn() } as any;
+      const mockEvent = { preventDefault: vi.fn() } as unknown as FormEvent;
 
       await act(async () => {
         result.current.setBusStopName('T-Centralen');

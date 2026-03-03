@@ -109,7 +109,7 @@ describe('SLService', () => {
     });
 
     it('should return null for undefined sites', () => {
-      const result = slService.findBestMatch(null as any, 'T-Centralen');
+      const result = slService.findBestMatch(null as unknown as [], 'T-Centralen');
 
       expect(result).toBeNull();
     });
