@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="90" fill="#1a1a2e"/>
+
+  <!-- Clock circle -->
+  <circle cx="256" cy="160" r="72" fill="none" stroke="white" stroke-width="22"/>
+  <!-- Clock hands -->
+  <line x1="256" y1="160" x2="256" y2="108" stroke="white" stroke-width="18" stroke-linecap="round"/>
+  <line x1="256" y1="160" x2="296" y2="185" stroke="white" stroke-width="14" stroke-linecap="round"/>
+
+  <!-- Departure rows -->
+  <rect x="96" y="284" width="320" height="22" rx="11" fill="white"/>
+  <rect x="96" y="332" width="260" height="22" rx="11" fill="rgba(255,255,255,0.65)"/>
+  <rect x="96" y="380" width="290" height="22" rx="11" fill="rgba(255,255,255,0.35)"/>
+
+  <!-- Arrow indicating departures -->
+  <polyline points="376,332 406,343 376,354" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

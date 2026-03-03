@@ -5,7 +5,8 @@ import { BusStopData, ApiErrorResponse, BusStopDataGrouped } from '../types/bus.
  * Bus API Service
  * Handles all HTTP requests related to bus information
  */
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '';
+const rawBase = import.meta.env.VITE_API_BASE_URL ?? '';
+const API_BASE = rawBase && !rawBase.startsWith('http') ? `https://${rawBase}` : rawBase;
 
 class BusService {
   /**

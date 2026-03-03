@@ -49,7 +49,7 @@ class SLService {
      * Get departures for a specific site ID
      */
     async getDepartures(siteId) {
-        const departuresUrl = `${this.baseUrl}/sites/${siteId}/departures?timewindow=60`;
+        const departuresUrl = `${this.baseUrl}/sites/${siteId}/departures`;
         console.log(`Fetching departures from: ${departuresUrl}`);
         const response = await fetch(departuresUrl);
         if (!response.ok) {
@@ -100,7 +100,7 @@ class SLService {
      * Get bus stop data with departures grouped by line
      * High-level method that groups departures by line and limits to maxPerLine per line
      */
-    async getBusStopDataGrouped(stopName, maxPerLine = 10) {
+    async getBusStopDataGrouped(stopName, maxPerLine = 3) {
         console.log(`Searching for bus stop (grouped): "${stopName}"`);
         // Search for the stop
         const sites = await this.searchSites(stopName);
