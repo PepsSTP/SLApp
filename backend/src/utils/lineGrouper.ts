@@ -70,7 +70,7 @@ export function groupDeparturesByLine(
   // Convert map to array of GroupedDeparture objects
   const groupedDepartures: GroupedDeparture[] = [];
 
-  for (const [_, groupDepartures] of groups.entries()) {
+  for (const [, groupDepartures] of groups.entries()) {
     if (groupDepartures.length > 0) {
       const firstDeparture = groupDepartures[0];
       groupedDepartures.push({

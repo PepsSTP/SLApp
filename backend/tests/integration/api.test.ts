@@ -141,7 +141,7 @@ describe('API Integration Tests', () => {
       expect(response.body).toHaveProperty('stopName');
       expect(response.body).toHaveProperty('buses');
 
-      response.body.buses.forEach((bus: any) => {
+      response.body.buses.forEach((bus: Record<string, unknown>) => {
         expect(bus).toHaveProperty('line');
         expect(bus).toHaveProperty('destination');
         expect(bus).toHaveProperty('departureTime');
