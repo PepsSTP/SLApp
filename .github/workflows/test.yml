@@ -106,3 +106,74 @@ jobs:
       - name: Build frontend
         working-directory: ./frontend
         run: npm run build
+
+  notify:
+    name: Slack Notification
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests, build]
+    if: always()
+
+    steps:
+      - name: Notify success (non-main)
+        if: ${{ needs.build.result == 'success' && github.ref_name != 'main' }}
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": ":white_check_mark: *SLApp build passed*",
+              "attachments": [{
+                "color": "good",
+                "fields": [
+                  { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                  { "title": "Triggered by", "value": "${{ github.actor }}", "short": true },
+                  { "title": "Commit", "value": "<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.event.head_commit.message }}>", "short": false }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Notify deployment triggered (main only)
+        if: ${{ needs.build.result == 'success' && github.ref_name == 'main' && github.event_name == 'push' }}
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": ":rocket: *SLApp deploying to production*",
+              "attachments": [{
+                "color": "good",
+                "fields": [
+                  { "title": "Triggered by", "value": "${{ github.actor }}", "short": true },
+                  { "title": "Commit", "value": "<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ github.event.head_commit.message }}>", "short": false },
+                  { "title": "Frontend", "value": "Deploying to Vercel...", "short": true },
+                  { "title": "Backend", "value": "Deploying to Railway...", "short": true }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+
+      - name: Notify failure
+        if: ${{ needs.backend-tests.result == 'failure' || needs.frontend-tests.result == 'failure' || needs.build.result == 'failure' }}
+        uses: slackapi/slack-github-action@v1.27.0
+        with:
+          payload: |
+            {
+              "text": ":x: *SLApp build failed*",
+              "attachments": [{
+                "color": "danger",
+                "fields": [
+                  { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
+                  { "title": "Triggered by", "value": "${{ github.actor }}", "short": true },
+                  { "title": "Backend tests", "value": "${{ needs.backend-tests.result }}", "short": true },
+                  { "title": "Frontend tests", "value": "${{ needs.frontend-tests.result }}", "short": true },
+                  { "title": "Build", "value": "${{ needs.build.result }}", "short": true },
+                  { "title": "Details", "value": "<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>", "short": false }
+                ]
+              }]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
