@@ -1,4 +1,4 @@
-import { createLinearClient, findAgentIssues, markInProgress, addComment, removeLabelAndSetReview } from './linear.js';
+import { createLinearClient, findAgentIssues, markInProgress, addComment, setInReview } from './linear.js';
 import { developIssue } from './developer.js';
 import { notify } from './slack.js';
 
@@ -16,7 +16,7 @@ async function processIssue(issue: { id: string; identifier: string; title: stri
     const prUrl = await developIssue(issue);
 
     await addComment(linear, issue.id, `🤖 Dev agent created PR: ${prUrl}`);
-    await removeLabelAndSetReview(linear, issue.id);
+    await setInReview(linear, issue.id);
     await notify(`✅ *Dev agent completed ${issue.identifier}*\n${issue.title}\nPR: ${prUrl}`);
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
