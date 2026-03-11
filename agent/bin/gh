@@ -1,0 +1,4 @@
+#!/bin/sh
+# Stub: PR creation is handled by the orchestrator. Silently succeed.
+echo "https://github.com/PepsSTP/SLApp/pulls"
+exit 0
