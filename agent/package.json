@@ -1,0 +1,21 @@
+{
+  "name": "slapp-dev-agent",
+  "version": "1.0.0",
+  "description": "Autonomous developer agent for SLApp — picks up Linear issues and creates PRs",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx --env-file=.env src/index.ts",
+    "build": "tsc",
+    "start": "node --env-file=.env dist/index.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "latest",
+    "@linear/sdk": "^38.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.3.3"
+  }
+}
