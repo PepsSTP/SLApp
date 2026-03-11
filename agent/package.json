@@ -5,9 +5,9 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "tsx --env-file=.env src/index.ts",
+    "dev": "env -u CLAUDECODE tsx --env-file=.env src/index.ts",
     "build": "tsc",
-    "start": "node --env-file=.env dist/index.js"
+    "start": "env -u CLAUDECODE node --env-file=.env dist/index.js"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "latest",
