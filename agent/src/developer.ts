@@ -35,6 +35,7 @@ Instructions:
    - \`cd frontend && npm test\`
 4. Fix any test failures before finishing
 5. Keep changes focused — only implement what the issue describes
+6. Commit your changes with \`git add\` and \`git commit\`. Do NOT push or create a PR — that is handled automatically after you finish.
 
 The issue URL for reference: ${issue.url}`;
 }
@@ -66,7 +67,8 @@ export async function developIssue(issue: AgentIssue): Promise<string> {
 The project has a React/Vite frontend and an Express backend, both in TypeScript.
 Always read existing code before modifying it. Follow the existing code style.
 Run tests after implementing changes and fix any failures.
-Make clean, focused commits with descriptive messages.`,
+Make clean, focused commits with descriptive messages.
+IMPORTANT: Do NOT push or create a pull request. Only implement, commit, and stop. The calling system handles push and PR creation.`,
       },
     })) {
       if ('result' in message) {
