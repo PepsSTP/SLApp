@@ -45,9 +45,11 @@ export async function developIssue(issue: AgentIssue): Promise<string> {
   console.log(`\n🤖 Starting work on ${issue.identifier}: ${issue.title}`);
   console.log(`📌 Branch: ${branchName}`);
 
-  // Create branch from latest main
+  // Create branch from latest main (clean up any leftover branch first)
   exec('git checkout main');
   exec('git pull origin main');
+  try { exec(`git branch -D ${branchName}`); } catch { /* branch didn't exist */ }
+  try { exec(`git push origin --delete ${branchName}`); } catch { /* not on remote */ }
   exec(`git checkout -b ${branchName}`);
 
   try {
