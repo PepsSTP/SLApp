@@ -24,8 +24,13 @@
 body {
   margin: 0;
   display: flex;
-  min-width: 320px;
+  min-width: 0;
   min-height: 100vh;
+  overflow-x: hidden;
+  /* Prevent pull-to-refresh interfering with in-app scroll */
+  overscroll-behavior-y: contain;
+  /* Eliminate 300ms tap delay on mobile */
+  touch-action: manipulation;
 }
 
 #root {

@@ -63,7 +63,7 @@ export function DestinationDashboard() {
           </div>
         )}
 
-        <div className="dest-list">
+        <div className="dest-list" key={currentView}>
           {destinationGroups.map((group) => (
             <DestinationGroup key={group.displayName} groupResult={group} />
           ))}
