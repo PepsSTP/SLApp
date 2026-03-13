@@ -1,5 +1,7 @@
+import { useRef, useCallback } from 'react';
 import { useDestinationView } from '../hooks/useDestinationView';
 import { ViewToggle } from './ViewToggle';
+import { BottomNav } from './BottomNav';
 import { DestinationGroup } from './DestinationGroup';
 
 function formatTimeSince(date: Date | null): string {
@@ -10,6 +12,8 @@ function formatTimeSince(date: Date | null): string {
   const diffMinutes = Math.floor(diffSeconds / 60);
   return diffMinutes === 1 ? '1 min ago' : `${diffMinutes} min ago`;
 }
+
+const SWIPE_THRESHOLD = 50;
 
 export function DestinationDashboard() {
   const {
@@ -24,9 +28,38 @@ export function DestinationDashboard() {
 
   const hasErrors = Object.keys(errors).length > 0;
 
+  // Swipe gesture handling
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+
+    // Only trigger if horizontal swipe is dominant and exceeds threshold
+    if (Math.abs(deltaX) > SWIPE_THRESHOLD && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
+      if (deltaX < 0 && currentView === 'from-home') {
+        setView('to-home');
+      } else if (deltaX > 0 && currentView === 'to-home') {
+        setView('from-home');
+      }
+    }
+
+    touchStartX.current = null;
+    touchStartY.current = null;
+  }, [currentView, setView]);
+
   return (
     <div className="dashboard">
       <header className="top-bar">
+        <span className="top-bar-title">Avgångar</span>
         <ViewToggle currentView={currentView} onViewChange={setView} />
         <button
           className="refresh-btn"
@@ -47,7 +80,11 @@ export function DestinationDashboard() {
         </button>
       </header>
 
-      <main className="content-area">
+      <main
+        className="content-area"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
         {loading && destinationGroups.length === 0 && (
           <div className="loading-state">
             <div className="spinner"></div>
@@ -75,6 +112,8 @@ export function DestinationDashboard() {
           )}
         </div>
       </main>
+
+      <BottomNav currentView={currentView} onViewChange={setView} />
     </div>
   );
 }

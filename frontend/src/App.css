@@ -16,6 +16,13 @@
   padding-right: env(safe-area-inset-right);
 }
 
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 /* ============================================================
    TOP BAR
    ============================================================ */
@@ -33,10 +40,28 @@
   gap: 8px;
 }
 
+/* On mobile, hide tab group from the top bar (shown in bottom nav instead) */
+.top-bar .tab-group {
+  display: none;
+}
+
+@media (min-width: 600px) {
+  .top-bar .tab-group {
+    display: flex;
+  }
+}
+
 .top-bar-title {
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: 0.02em;
+}
+
+/* On desktop, hide title (tabs take its place) */
+@media (min-width: 600px) {
+  .top-bar-title {
+    display: none;
+  }
 }
 
 .refresh-btn {
@@ -81,6 +106,58 @@
 }
 
 /* ============================================================
+   BOTTOM NAV (mobile only)
+   ============================================================ */
+
+.bottom-nav {
+  display: flex;
+  background: #1a1a2e;
+  flex-shrink: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+  box-shadow: 0 -1px 4px rgba(0,0,0,0.2);
+}
+
+.bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 4px;
+  border: none;
+  background: transparent;
+  color: rgba(255,255,255,0.5);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+  min-height: 52px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-btn.active {
+  color: white;
+  background: rgba(255,255,255,0.08);
+}
+
+.bottom-nav-btn:not(.active):active {
+  background: rgba(255,255,255,0.04);
+}
+
+.bottom-nav-icon {
+  width: 22px;
+  height: 22px;
+}
+
+/* Hide bottom nav on desktop — use top bar tabs instead */
+@media (min-width: 600px) {
+  .bottom-nav {
+    display: none;
+  }
+}
+
+/* ============================================================
    CONTENT AREA
    ============================================================ */
 
@@ -88,8 +165,15 @@
   flex: 1;
   overflow-y: auto;
   padding: 8px;
-  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  /* On mobile, bottom nav handles safe-area; on desktop, content does */
+  padding-bottom: 8px;
   -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 600px) {
+  .content-area {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
 }
 
 .dest-list {
@@ -405,7 +489,7 @@
 
   .content-area {
     padding: 4px;
-    padding-bottom: calc(4px + env(safe-area-inset-bottom));
+    padding-bottom: 4px;
   }
 
   .dest-list {
@@ -458,6 +542,16 @@
   .dest-summary {
     font-size: 0.68rem;
   }
+
+  .bottom-nav-btn {
+    min-height: 46px;
+    font-size: 0.65rem;
+  }
+
+  .bottom-nav-icon {
+    width: 18px;
+    height: 18px;
+  }
 }
 
 /* ============================================================
@@ -473,7 +567,7 @@
 
   .content-area {
     padding: 6px;
-    padding-bottom: calc(6px + env(safe-area-inset-bottom));
+    padding-bottom: 6px;
   }
 
   .dest-list {
@@ -529,7 +623,7 @@
 @media (min-width: 375px) and (max-width: 389px) {
   .content-area {
     padding: 8px;
-    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    padding-bottom: 8px;
   }
 
   .departure-row {
@@ -545,7 +639,7 @@
 @media (min-width: 390px) and (max-width: 413px) {
   .content-area {
     padding: 8px;
-    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    padding-bottom: 8px;
   }
 
   .departure-row {
@@ -561,7 +655,7 @@
 @media (min-width: 414px) and (max-width: 599px) {
   .content-area {
     padding: 10px;
-    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    padding-bottom: 10px;
   }
 
   .departure-row {
@@ -589,6 +683,19 @@
     padding-top: 4px;
     padding-bottom: 4px;
     min-height: 40px;
+  }
+
+  /* In landscape, show tabs in top bar; hide bottom nav */
+  .top-bar .tab-group {
+    display: flex;
+  }
+
+  .top-bar-title {
+    display: none;
+  }
+
+  .bottom-nav {
+    display: none;
   }
 
   .content-area {
