@@ -76,8 +76,8 @@ IMPORTANT: Do NOT push or create a pull request. Only implement, commit, and sto
       }
     }
 
-    // Push branch
-    exec(`git push origin ${branchName}`);
+    // Push branch (force in case a previous run left a stale remote branch)
+    exec(`git push --force origin ${branchName}`);
 
     // Create PR via GitHub API
     const prTitle = `${issue.identifier}: ${issue.title}`;
