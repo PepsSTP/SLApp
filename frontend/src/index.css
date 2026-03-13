@@ -48,3 +48,21 @@ button {
 button:active {
   transform: scale(0.98);
 }
+
+/* Prevent text size adjustment on orientation change in iOS Safari */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Prevent images/media from overflowing containers */
+img, svg, video {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:active {
+    transform: none;
+  }
+}

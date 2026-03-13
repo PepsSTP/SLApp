@@ -552,6 +552,26 @@
     width: 18px;
     height: 18px;
   }
+
+  .error-banner {
+    padding: 8px 8px;
+    font-size: 0.78rem;
+  }
+
+  .loading-state {
+    padding: 32px 8px;
+    font-size: 0.85rem;
+  }
+
+  .empty-state {
+    padding: 32px 8px;
+    font-size: 0.85rem;
+  }
+
+  .show-window-btn {
+    font-size: 0.78rem;
+    padding: 10px 6px;
+  }
 }
 
 /* ============================================================
@@ -796,5 +816,265 @@
   .tab-btn {
     padding: 5px 14px;
     font-size: 0.82rem;
+  }
+}
+
+/* ============================================================
+   FOCUS-VISIBLE (keyboard accessibility on mobile browsers)
+   ============================================================ */
+
+.refresh-btn:focus-visible,
+.tab-btn:focus-visible,
+.bottom-nav-btn:focus-visible,
+.dest-card-header:focus-visible,
+.show-window-btn:focus-visible {
+  outline: 2px solid #4a90d9;
+  outline-offset: -2px;
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .refresh-icon.spinning {
+    animation: none;
+  }
+
+  .spinner {
+    animation-duration: 3s;
+  }
+
+  .dest-list {
+    animation: none;
+  }
+
+  .dest-chevron {
+    transition: none;
+  }
+
+  button:active {
+    transform: none;
+  }
+}
+
+/* ============================================================
+   LEGACY COMPONENTS (DashboardView, StationCard, LineGroup, BusCard)
+   Responsive fallback styles in case these components are rendered.
+   ============================================================ */
+
+.dashboard-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.dashboard-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dashboard-header h1 {
+  font-size: 1rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-subtitle {
+  font-size: 0.8rem;
+  color: #888;
+  margin: 0;
+}
+
+.refresh-button {
+  padding: 8px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: white;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.stations-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.station-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  width: 100%;
+  min-width: 0;
+}
+
+.station-header {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.station-header h2 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.line-group {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.line-group:last-child {
+  border-bottom: none;
+}
+
+.line-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  min-width: 0;
+}
+
+.bus-line {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: white;
+  background: #1565c0;
+  flex-shrink: 0;
+}
+
+.bus-destination {
+  font-size: 0.85rem;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.departure-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-size: 0.82rem;
+  color: #555;
+}
+
+.bus-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f5f5f5;
+  min-width: 0;
+}
+
+.bus-card:last-child {
+  border-bottom: none;
+}
+
+.bus-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.bus-info p {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bus-time {
+  font-size: 0.82rem;
+  color: #555;
+}
+
+.error-card {
+  border-left: 3px solid #d32f2f;
+}
+
+.error-message {
+  padding: 12px;
+  color: #c62828;
+  font-size: 0.85rem;
+}
+
+.retry-button {
+  margin-top: 8px;
+  padding: 8px 14px;
+  border: 1px solid #d32f2f;
+  border-radius: 8px;
+  background: white;
+  color: #d32f2f;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+@media (max-width: 359px) {
+  .dashboard-view {
+    padding: 4px;
+    gap: 8px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 0.85rem;
+  }
+
+  .station-header h2 {
+    font-size: 0.78rem;
+  }
+
+  .line-group {
+    padding: 6px 8px;
+  }
+
+  .bus-destination {
+    font-size: 0.78rem;
+  }
+
+  .departure-list {
+    font-size: 0.75rem;
+  }
+
+  .bus-card {
+    padding: 6px 8px;
   }
 }
