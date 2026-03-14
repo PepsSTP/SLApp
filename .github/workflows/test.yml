@@ -114,6 +114,12 @@ jobs:
     if: always()
 
     steps:
+      - name: Sanitize commit message
+        id: commit
+        run: |
+          MSG=$(echo "${{ github.event.head_commit.message }}" | head -1 | sed 's/\\/\\\\/g; s/"/\\"/g')
+          echo "msg=$MSG" >> $GITHUB_OUTPUT
+
       - name: Notify success (non-main)
         if: ${{ needs.build.result == 'success' && github.ref_name != 'main' }}
         uses: slackapi/slack-github-action@v1.27.0
@@ -126,7 +132,7 @@ jobs:
                 "fields": [
                   { "title": "Branch", "value": "${{ github.ref_name }}", "short": true },
                   { "title": "Triggered by", "value": "${{ github.actor }}", "short": true },
-                  { "title": "Commit", "value": "<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ toJson(github.event.head_commit.message) }}>", "short": false }
+                  { "title": "Commit", "value": "<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ steps.commit.outputs.msg }}>", "short": false }
                 ]
               }]
             }
@@ -145,7 +151,7 @@ jobs:
                 "color": "good",
                 "fields": [
                   { "title": "Triggered by", "value": "${{ github.actor }}", "short": true },
-                  { "title": "Commit", "value": "<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ toJson(github.event.head_commit.message) }}>", "short": false },
+                  { "title": "Commit", "value": "<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${{ steps.commit.outputs.msg }}>", "short": false },
                   { "title": "Frontend", "value": "Deploying to Vercel...", "short": true },
                   { "title": "Backend", "value": "Deploying to Railway...", "short": true }
                 ]
