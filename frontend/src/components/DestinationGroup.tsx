@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { DestinationGroupResult } from '../utils/destinationGrouper';
+import { DestinationGroupResult, MergedDeparture } from '../utils/destinationGrouper';
+import { DepartureDetail } from './DepartureDetail';
 
 interface DestinationGroupProps {
   groupResult: DestinationGroupResult;
@@ -64,6 +65,7 @@ export function DestinationGroup({ groupResult, defaultCollapsed = false }: Dest
   const { displayName, departures } = groupResult;
   const [windowMinutes, setWindowMinutes] = useState(WINDOW_STEP);
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const [selectedDeparture, setSelectedDeparture] = useState<MergedDeparture | null>(null);
 
   const now = Date.now();
   const windowMs = windowMinutes * 60 * 1000;
@@ -107,7 +109,14 @@ export function DestinationGroup({ groupResult, defaultCollapsed = false }: Dest
                 {visible.map((departure, index) => {
                   const diffMinutes = getMinutesUntil(departure.departureTime);
                   return (
-                    <li key={index} className="departure-row">
+                    <li
+                      key={index}
+                      className="departure-row departure-row--tappable"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setSelectedDeparture(departure)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedDeparture(departure); } }}
+                    >
                       <span className={`departure-time ${getUrgencyClass(diffMinutes)}`}>
                         {formatRelativeTime(diffMinutes)}
                       </span>
@@ -140,6 +149,13 @@ export function DestinationGroup({ groupResult, defaultCollapsed = false }: Dest
             </>
           )}
         </>
+      )}
+
+      {selectedDeparture && (
+        <DepartureDetail
+          departure={selectedDeparture}
+          onClose={() => setSelectedDeparture(null)}
+        />
       )}
     </div>
   );

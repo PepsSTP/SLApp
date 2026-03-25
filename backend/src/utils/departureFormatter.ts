@@ -49,6 +49,13 @@ function extractDepartureTime(departure: SLDeparture): string {
 }
 
 /**
+ * Extracts scheduled departure time from SL departure data
+ */
+function extractScheduledTime(departure: SLDeparture): string {
+  return departure.scheduled || departure.expected || departure.display || '';
+}
+
+/**
  * Formats a single SL departure into a standardized format
  */
 export function formatDeparture(departure: SLDeparture): FormattedDeparture {
@@ -56,11 +63,13 @@ export function formatDeparture(departure: SLDeparture): FormattedDeparture {
   const lineLabel = formatLineLabel(designation, mode);
   const destination = extractDestination(departure);
   const departureTime = extractDepartureTime(departure);
+  const scheduled = extractScheduledTime(departure);
 
   return {
     line: lineLabel,
     destination,
-    departureTime
+    departureTime,
+    scheduled
   };
 }
 

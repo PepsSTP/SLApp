@@ -59,6 +59,7 @@ export interface FormattedDeparture {
   line: string;
   destination: string;
   departureTime: string;
+  scheduled: string;
 }
 
 /**

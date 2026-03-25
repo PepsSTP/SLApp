@@ -209,7 +209,7 @@ describe('BusController', () => {
           line: 'Metro 1',
           transportMode: 'METRO',
           destination: 'Fruängen',
-          departures: [{ line: 'Metro 1', destination: 'Fruängen', departureTime: '2024-01-15T10:25:00' }],
+          departures: [{ line: 'Metro 1', destination: 'Fruängen', departureTime: '2024-01-15T10:25:00', scheduled: '2024-01-15T10:25:00' }],
         },
       ],
     };

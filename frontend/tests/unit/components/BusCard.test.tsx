@@ -8,6 +8,7 @@ describe('BusCard', () => {
     line: '4',
     destination: 'Gullmarsplan',
     departureTime: '2024-01-15T10:30:00',
+    scheduled: '2024-01-15T10:30:00',
   };
 
   it('should render bus line', () => {
@@ -33,6 +34,7 @@ describe('BusCard', () => {
       line: 'Metro 1',
       destination: 'Fruängen',
       departureTime: '2024-01-15T10:25:00',
+      scheduled: '2024-01-15T10:25:00',
     };
 
     render(<BusCard bus={metroBus} />);
@@ -55,6 +57,7 @@ describe('BusCard', () => {
       line: '',
       destination: '',
       departureTime: '',
+      scheduled: '',
     };
 
     const { container } = render(<BusCard bus={emptyBus} />);
