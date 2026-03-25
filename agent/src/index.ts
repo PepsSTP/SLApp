@@ -21,8 +21,16 @@ async function processIssue(issue: { id: string; identifier: string; title: stri
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     console.error(`❌ Failed on ${issue.identifier}:`, errorMessage);
-    await addComment(linear, issue.id, `❌ Dev agent failed:\n\`\`\`\n${errorMessage}\n\`\`\``);
-    await notify(`❌ *Dev agent failed on ${issue.identifier}*\n${issue.title}\n\`${errorMessage.slice(0, 200)}\``);
+    try {
+      await addComment(linear, issue.id, `❌ Dev agent failed:\n\`\`\`\n${errorMessage}\n\`\`\``);
+    } catch (commentErr) {
+      console.error('Failed to post Linear comment:', commentErr);
+    }
+    try {
+      await notify(`❌ *Dev agent failed on ${issue.identifier}*\n${issue.title}\n\`${errorMessage.slice(0, 200)}\``);
+    } catch (notifyErr) {
+      console.error('Failed to send Slack notification:', notifyErr);
+    }
   }
 }
 
