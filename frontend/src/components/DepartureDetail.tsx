@@ -1,4 +1,5 @@
 import { useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { MergedDeparture } from '../utils/destinationGrouper';
 
 interface DepartureDetailProps {
@@ -74,7 +75,7 @@ export function DepartureDetail({ departure, onClose }: DepartureDetailProps) {
   const relativeTime = formatRelativeTime(departure.departureTime);
   const timesAreSame = departure.scheduled === departure.departureTime;
 
-  return (
+  return createPortal(
     <div className="detail-backdrop" onClick={handleBackdropClick} role="dialog" aria-modal="true" aria-label="Departure details">
       <div className="detail-sheet">
         <div className="detail-header">
@@ -125,6 +126,7 @@ export function DepartureDetail({ departure, onClose }: DepartureDetailProps) {
           )}
         </dl>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
