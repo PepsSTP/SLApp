@@ -95,16 +95,19 @@ export const mockBusStopData = {
       line: 'Metro 1',
       destination: 'Fruängen',
       departureTime: '2024-01-15T10:25:00',
+      scheduled: '2024-01-15T10:25:00',
     },
     {
       line: '4',
       destination: 'Gullmarsplan',
       departureTime: '2024-01-15T10:30:00',
+      scheduled: '2024-01-15T10:30:00',
     },
     {
       line: '55',
       destination: 'Slussen',
       departureTime: '2024-01-15T10:35:00',
+      scheduled: '2024-01-15T10:35:00',
     },
   ],
 };

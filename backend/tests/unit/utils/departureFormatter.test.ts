@@ -23,6 +23,7 @@ describe('departureFormatter', () => {
         line: '4',
         destination: 'Gullmarsplan',
         departureTime: '2024-01-15T10:30:00',
+        scheduled: '2024-01-15T10:30:00',
       });
     });
 
@@ -85,6 +86,24 @@ describe('departureFormatter', () => {
       const result = formatDeparture(departure);
 
       expect(result.departureTime).toBe('2024-01-15T10:30:00');
+      expect(result.scheduled).toBe('2024-01-15T10:30:00');
+    });
+
+    it('should set scheduled to the SL scheduled time even when expected differs', () => {
+      const departure: SLDeparture = {
+        line: {
+          designation: '4',
+          transport_mode: 'BUS',
+        },
+        destination: 'Gullmarsplan',
+        expected: '2024-01-15T10:35:00',
+        scheduled: '2024-01-15T10:30:00',
+      };
+
+      const result = formatDeparture(departure);
+
+      expect(result.departureTime).toBe('2024-01-15T10:35:00');
+      expect(result.scheduled).toBe('2024-01-15T10:30:00');
     });
 
     it('should use display time as fallback', () => {
@@ -222,16 +241,19 @@ describe('departureFormatter', () => {
           line: '55',
           destination: 'Slussen',
           departureTime: '2024-01-15T10:35:00',
+          scheduled: '2024-01-15T10:35:00',
         },
         {
           line: 'Metro 1',
           destination: 'Fruängen',
           departureTime: '2024-01-15T10:25:00',
+          scheduled: '2024-01-15T10:25:00',
         },
         {
           line: '4',
           destination: 'Gullmarsplan',
           departureTime: '2024-01-15T10:30:00',
+          scheduled: '2024-01-15T10:30:00',
         },
       ];
 
@@ -248,11 +270,13 @@ describe('departureFormatter', () => {
           line: '55',
           destination: 'Slussen',
           departureTime: '2024-01-15T10:35:00',
+          scheduled: '2024-01-15T10:35:00',
         },
         {
           line: '4',
           destination: 'Gullmarsplan',
           departureTime: '2024-01-15T10:25:00',
+          scheduled: '2024-01-15T10:25:00',
         },
       ];
 
@@ -273,6 +297,7 @@ describe('departureFormatter', () => {
           line: '4',
           destination: 'Gullmarsplan',
           departureTime: '2024-01-15T10:30:00',
+          scheduled: '2024-01-15T10:30:00',
         },
       ];
 

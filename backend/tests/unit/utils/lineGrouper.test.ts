@@ -5,6 +5,7 @@ const dep = (line: string, destination: string, time: string): FormattedDepartur
   line,
   destination,
   departureTime: time,
+  scheduled: time,
 });
 
 describe('lineGrouper', () => {

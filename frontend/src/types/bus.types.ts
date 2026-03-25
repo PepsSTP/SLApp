@@ -9,6 +9,7 @@ export interface Bus {
   line: string;
   destination: string;
   departureTime: string;
+  scheduled: string;
 }
 
 /**

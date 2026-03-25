@@ -8,6 +8,7 @@ export interface MergedDeparture {
   line: string;
   destination: string;
   departureTime: string; // ISO timestamp
+  scheduled: string; // ISO timestamp — scheduled (timetable) time
   originStop: string; // Which stop this departure is from
   transportMode: string;
 }
@@ -63,6 +64,7 @@ export function groupByDestination(
               line: groupedDeparture.line,
               destination: groupedDeparture.destination,
               departureTime: departure.departureTime,
+              scheduled: departure.scheduled ?? departure.departureTime,
               originStop: stop.stopName,
               transportMode: groupedDeparture.transportMode
             });
