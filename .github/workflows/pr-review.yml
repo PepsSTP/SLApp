@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     # Only run for agent-created branches
     if: startsWith(github.head_ref, 'agent/')
+    permissions:
+      pull-requests: write
 
     steps:
       - name: Checkout
