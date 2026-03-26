@@ -42,7 +42,9 @@ export const FROM_HOME_DESTINATIONS: DestinationGroup[] = [
     displayName: "To Gullmarsplan",
     routes: [
       { line: "144", destination: "Gullmarsplan" },
-      { line: "Metro 19", destination: "Hässelby strand" } // from Bandhagen metro, passes through Gullmarsplan
+      { line: "Metro 19", destination: "Hässelby strand" }, // full service westbound
+      { line: "Metro 19", destination: "Vällingby" },       // short-turn westbound, still passes Gullmarsplan
+      { line: "Metro 19", destination: "Alvik" }            // short-turn westbound, still passes Gullmarsplan
     ]
   }
 ];
