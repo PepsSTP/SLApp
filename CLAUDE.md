@@ -46,6 +46,8 @@ SLApp is a Stockholm public transport departure dashboard.
 - Moves issue: Todo → In Progress (on start) → In Review (on PR created)
 - Posts PR link as a comment on the Linear issue when done
 - Run locally: `cd agent && npm run dev`
+- Always read SPEC.md before starting implementation
+- If your changes affect any behaviour described in SPEC.md (time windows, component structure, API shape, routes, non-functional requirements), update the relevant section in the same commit
 
 ## Code conventions
 - TypeScript throughout (strict mode)
