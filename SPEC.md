@@ -54,7 +54,7 @@ Destination stops from which the user returns home:
 |---|---|
 | To Älvsjö Station | 144→Fruängen, 144→Älvsjö station, 173→Skärholmen, 161→Gröndal, 163→Bredäng |
 | To Enskede | 163→Kärrtorp, 161→Bagarmossen |
-| To Gullmarsplan | 144→Gullmarsplan, Metro 19→Hässelby strand |
+| To Gullmarsplan | 144→Gullmarsplan, Metro 19→Hässelby strand, Metro 19→Vällingby, Metro 19→Alvik |
 
 ### To Home — Destination Groups
 
@@ -148,7 +148,7 @@ interface Departure {
 | Concern | Requirement |
 |---|---|
 | Refresh interval | 30 seconds (configurable in future) |
-| Time window | Show departures within the next 30–90 min |
+| Time window | Default 30 min; expandable to 60 min via "Show more" button |
 | Rate limiting | 60 requests/min per IP (backend) |
 | CORS | Backend only accepts requests from the configured frontend origin |
 | Security headers | Helmet middleware applied on all responses |
@@ -165,10 +165,11 @@ interface Departure {
 DestinationDashboard
 ├── ViewToggle              — switches between From Home / To Home
 ├── DestinationGroup[]      — one per destination area
-│   └── LineGroup[]         — one per line + destination combo
-│       └── BusCard[]       — one per departure
+│   ├── departure rows      — sorted by time, filtered by time window
+│   ├── Show more/less      — expands window from 30 → 60 min
+│   └── DepartureDetail     — modal/bottom sheet shown on row tap
 ├── useDestinationView      — manages view state, refresh timer, data fetching
-└── busService              — axios HTTP client, error parsing
+└── busService              — HTTP client, error parsing
 ```
 
 ### Backend
@@ -188,18 +189,20 @@ Express Server
 
 Issues are tracked in Linear (project: PepsSTP).
 
-### Near-term
+### In Review / Todo
+| ID | Issue | Status |
+|---|---|---|
+| PEP-13 | Tap departure to view full details | In Review |
+| PEP-14 | Fix departure detail sheet obscured by bottom nav on mobile | Todo |
+| PEP-15 | Fix departure cap cutting off "Show more" on combined destination groups | Todo |
+
+### Backlog
 | ID | Issue |
 |---|---|
-| PEP-5 | Mobile-responsive layout |
 | PEP-6 | User-configurable stops via UI |
 | PEP-7 | Server-side caching for SL API responses |
 | PEP-8 | Retry backoff + circuit breaker for SL API errors |
 | PEP-9 | ARIA live regions for real-time updates |
-
-### Medium-term
-| ID | Issue |
-|---|---|
 | PEP-10 | Configurable refresh interval and time window |
 | PEP-11 | OpenAPI/Swagger documentation |
 | PEP-12 | Replace polling with WebSocket push |
