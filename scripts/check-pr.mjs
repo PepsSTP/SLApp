@@ -74,8 +74,8 @@ async function postPrComment(repo, prNumber, body) {
 
 async function getLinearIssue(identifier) {
   const query = `
-    query($identifier: String!) {
-      issueByIdentifier(identifier: $identifier) {
+    query($id: String!) {
+      issue(id: $id) {
         title
         description
       }
@@ -88,13 +88,13 @@ async function getLinearIssue(identifier) {
       Authorization: LINEAR_ACCESS_TOKEN,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ query, variables: { identifier } }),
+    body: JSON.stringify({ query, variables: { id: identifier } }),
   });
 
   if (!res.ok) throw new Error(`Linear API ${res.status}: ${await res.text()}`);
   const data = await res.json();
   if (data.errors) throw new Error(`Linear GraphQL error: ${JSON.stringify(data.errors)}`);
-  return data.data?.issueByIdentifier ?? null;
+  return data.data?.issue ?? null;
 }
 
 // ---------------------------------------------------------------------------
