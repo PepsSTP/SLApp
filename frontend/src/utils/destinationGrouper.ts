@@ -32,7 +32,7 @@ export interface DestinationGroupResult {
 export function groupByDestination(
   stops: BusStopDataGrouped[],
   destinationGroups: DestinationGroup[],
-  maxDeparturesPerGroup: number = 15
+  maxDeparturesPerGroup: number = 30
 ): DestinationGroupResult[] {
   const results: DestinationGroupResult[] = [];
 

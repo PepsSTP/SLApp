@@ -123,7 +123,7 @@ class SLService {
    * Get bus stop data with departures grouped by line
    * High-level method that groups departures by line and limits to maxPerLine per line
    */
-  async getBusStopDataGrouped(stopName: string, maxPerLine: number = 10): Promise<BusStopDataGrouped> {
+  async getBusStopDataGrouped(stopName: string, maxPerLine: number = 20): Promise<BusStopDataGrouped> {
     console.log(`Searching for bus stop (grouped): "${stopName}"`);
 
     // Search for the stop

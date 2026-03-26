@@ -343,5 +343,27 @@ describe('SLService', () => {
 
       spy.mockRestore();
     });
+
+    it('should return up to 20 departures per line by default', async () => {
+      const manyDepartures = Array.from({ length: 25 }, (_, i) => ({
+        line: { designation: '4', name: 'Line 4', transport_mode: 'BUS' },
+        destination: 'Gullmarsplan',
+        expected: `2024-01-15T${String(10 + Math.floor(i / 3)).padStart(2, '0')}:${String((i % 3) * 20).padStart(2, '0')}:00`,
+        scheduled: `2024-01-15T${String(10 + Math.floor(i / 3)).padStart(2, '0')}:${String((i % 3) * 20).padStart(2, '0')}:00`,
+      }));
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSites,
+      });
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ departures: manyDepartures }),
+      });
+
+      const result = await slService.getBusStopDataGrouped('T-Centralen');
+
+      expect(result.groupedDepartures[0].departures).toHaveLength(20);
+    });
   });
 });
