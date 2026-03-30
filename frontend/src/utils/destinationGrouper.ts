@@ -1,5 +1,5 @@
-import { BusStopDataGrouped } from '../types/bus.types';
-import { DestinationGroup, STOP_TRANSPORT_FILTERS } from '../config/destinations';
+import { JourneyResponse } from '../types/bus.types';
+import { DestinationGroup } from '../config/destinations';
 
 /**
  * Represents a single merged departure with origin stop information
@@ -22,53 +22,55 @@ export interface DestinationGroupResult {
 }
 
 /**
- * Groups departures from multiple stops by destination areas
+ * Key used to group routes by unique origin + destination pair
+ */
+export function pairKey(origin: string, destination: string): string {
+  return `${origin}|||${destination}`;
+}
+
+/**
+ * Groups journey responses into destination groups, merging and sorting by time.
  *
- * @param stops - Array of stop data with grouped departures
+ * @param journeysByPair - Map of "origin|||destination" → JourneyResponse
  * @param destinationGroups - Configuration of destination groupings
- * @param maxDeparturesPerGroup - Maximum number of departures to show per destination (default: 5)
+ * @param maxDeparturesPerGroup - Maximum number of departures per group (default: 30)
  * @returns Array of destination groups with merged, sorted departures
  */
 export function groupByDestination(
-  stops: BusStopDataGrouped[],
+  journeysByPair: Map<string, JourneyResponse>,
   destinationGroups: DestinationGroup[],
   maxDeparturesPerGroup: number = 30
 ): DestinationGroupResult[] {
   const results: DestinationGroupResult[] = [];
 
-  // Process each destination group
   for (const destinationGroup of destinationGroups) {
     const mergedDepartures: MergedDeparture[] = [];
 
-    // For each stop, find matching departures
-    for (const stop of stops) {
-      // Apply transport mode filter if configured for this stop
-      const allowedModes = STOP_TRANSPORT_FILTERS[stop.stopName];
-      const filteredDepartures = allowedModes
-        ? stop.groupedDepartures.filter(dep => allowedModes.includes(dep.transportMode))
-        : stop.groupedDepartures;
+    // Collect allowed lines per origin+destination pair for this group
+    const linesByPair = new Map<string, Set<string>>();
+    for (const route of destinationGroup.routes) {
+      const key = pairKey(route.originStop, route.destinationStop);
+      if (!linesByPair.has(key)) {
+        linesByPair.set(key, new Set());
+      }
+      linesByPair.get(key)!.add(route.line);
+    }
 
-      for (const groupedDeparture of filteredDepartures) {
-        // Check if this line + destination + origin matches any route in this destination group
-        const matchingRoute = destinationGroup.routes.find(
-          route =>
-            route.line === groupedDeparture.line &&
-            route.destination === groupedDeparture.destination &&
-            (!route.originStop || route.originStop === stop.stopName)
-        );
+    // For each origin+destination pair used by this group, extract matching journeys
+    for (const [key, allowedLines] of linesByPair) {
+      const response = journeysByPair.get(key);
+      if (!response) continue;
 
-        if (matchingRoute) {
-          // Add all departures from this line to the merged list
-          for (const departure of groupedDeparture.departures) {
-            mergedDepartures.push({
-              line: groupedDeparture.line,
-              destination: groupedDeparture.destination,
-              departureTime: departure.departureTime,
-              scheduled: departure.scheduled ?? departure.departureTime,
-              originStop: stop.stopName,
-              transportMode: groupedDeparture.transportMode
-            });
-          }
+      for (const departure of response.departures) {
+        if (allowedLines.has(departure.line)) {
+          mergedDepartures.push({
+            line: departure.line,
+            destination: departure.destination,
+            departureTime: departure.departureTime,
+            scheduled: departure.scheduled ?? departure.departureTime,
+            originStop: response.origin,
+            transportMode: departure.transportMode,
+          });
         }
       }
     }
@@ -85,7 +87,7 @@ export function groupByDestination(
 
     results.push({
       displayName: destinationGroup.displayName,
-      departures: limitedDepartures
+      departures: limitedDepartures,
     });
   }
 
