@@ -152,14 +152,14 @@ export function useDestinationView(): UseDestinationViewResult {
       if (existing) {
         // Append new journeys, deduplicating by departure time + line
         const existingKeys = new Set(
-          existing.journeys.map(j => `${j.line}|${j.departureTime}`)
+          existing.departures.map(d => `${d.line}|${d.departureTime}`)
         );
-        const newJourneys = response.journeys.filter(
-          j => !existingKeys.has(`${j.line}|${j.departureTime}`)
+        const newDepartures = response.departures.filter(
+          d => !existingKeys.has(`${d.line}|${d.departureTime}`)
         );
         journeysRef.current.set(key, {
           ...existing,
-          journeys: [...existing.journeys, ...newJourneys],
+          departures: [...existing.departures, ...newDepartures],
         });
       } else {
         journeysRef.current.set(key, response);
