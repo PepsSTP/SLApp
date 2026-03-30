@@ -6,6 +6,8 @@ interface DestinationGroupProps {
   groupResult: DestinationGroupResult;
   /** Whether this group starts collapsed */
   defaultCollapsed?: boolean;
+  /** Callback to load more departures beyond the initial window */
+  onLoadMore?: () => void;
 }
 
 const WINDOW_STEP = 30;
@@ -61,7 +63,7 @@ function shortenStopName(stopName: string): string {
   return match ? match[1].trim() : stopName;
 }
 
-export function DestinationGroup({ groupResult, defaultCollapsed = false }: DestinationGroupProps) {
+export function DestinationGroup({ groupResult, defaultCollapsed = false, onLoadMore }: DestinationGroupProps) {
   const { displayName, departures } = groupResult;
   const [windowMinutes, setWindowMinutes] = useState(WINDOW_STEP);
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
@@ -72,8 +74,19 @@ export function DestinationGroup({ groupResult, defaultCollapsed = false }: Dest
 
   const upcoming = departures.filter(d => new Date(d.departureTime).getTime() > now);
   const visible = upcoming.filter(d => new Date(d.departureTime).getTime() - now <= windowMs);
-  const hasMore = windowMinutes < MAX_WINDOW && upcoming.some(d => new Date(d.departureTime).getTime() - now > windowMs);
+  const hasMoreInWindow = windowMinutes < MAX_WINDOW && upcoming.some(d => new Date(d.departureTime).getTime() - now > windowMs);
   const hasLess = windowMinutes > WINDOW_STEP;
+
+  // "Show more" can either expand the time window or fetch more from the API
+  const canShowMore = hasMoreInWindow || (!!onLoadMore && windowMinutes >= MAX_WINDOW);
+
+  const handleShowMore = () => {
+    if (hasMoreInWindow) {
+      setWindowMinutes(w => w + WINDOW_STEP);
+    } else if (onLoadMore) {
+      onLoadMore();
+    }
+  };
 
   // Summary for collapsed state: show the nearest departure time
   const nextDeparture = upcoming.length > 0 ? getMinutesUntil(upcoming[0].departureTime) : null;
@@ -132,15 +145,15 @@ export function DestinationGroup({ groupResult, defaultCollapsed = false }: Dest
                 })}
               </ul>
 
-              {(hasMore || hasLess) && (
+              {(canShowMore || hasLess) && (
                 <div className="show-more-bar">
                   {hasLess && (
                     <button className="show-window-btn" onClick={() => setWindowMinutes(w => w - WINDOW_STEP)}>
                       Show less
                     </button>
                   )}
-                  {hasMore && (
-                    <button className="show-window-btn" onClick={() => setWindowMinutes(w => w + WINDOW_STEP)}>
+                  {canShowMore && (
+                    <button className="show-window-btn" onClick={handleShowMore}>
                       Show more
                     </button>
                   )}

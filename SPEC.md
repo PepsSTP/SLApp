@@ -28,41 +28,44 @@ These are non-negotiable. Any change to the app must preserve these behaviours.
 6. **Relative + absolute times** — Each departure shows both a relative time ("5 min", "Now") and a clock time ("08:42").
 7. **Urgency indicators** — Departures are visually differentiated by imminence (e.g. leaving soon vs. comfortable time).
 8. **Grouped by line** — Departures are grouped by line number and final destination within each destination area.
-9. **Transport mode filtering** — Bandhagen shows Metro only (bus departures from that stop are irrelevant to this commuter).
+9. **Transport mode filtering** — Handled implicitly by the origin→destination route configuration and line filtering in the backend.
 10. **Graceful error handling** — API failures show a user-friendly message, not a broken UI or raw error.
 
 ---
 
 ## 4. Stop & Route Configuration
 
-### Home Stops
-Stops near home from which the user departs:
-- `Helgestavägen (på Årdalavägen)`
-- `Bandhagen` (Metro only)
-- `Juliaborg`
-
-### Return Stops
-Destination stops from which the user returns home:
-- `Gullmarsplan`
-- `Älvsjö station`
-- `Sockenplan`
-- `Murklevägen`
+Routes are configured as origin → destination stop pairs, grouped by display destination. The Journey Planner API resolves which departures serve each pair.
 
 ### From Home — Destination Groups
 
-| Display Name | Lines & Destinations |
-|---|---|
-| To Älvsjö Station | 144→Fruängen, 144→Älvsjö station, 173→Skärholmen, 161→Gröndal, 163→Bredäng |
-| To Enskede | 163→Kärrtorp, 161→Bagarmossen |
-| To Gullmarsplan | 144→Gullmarsplan, Metro 19→Hässelby strand, Metro 19→Vällingby, Metro 19→Alvik |
+| Display Name | Line | Origin Stop | Destination Stop |
+|---|---|---|---|
+| To Älvsjö Station | 161 | Helgestavägen (på Årdalavägen) | Älvsjö station |
+| | 144 | Juliaborg | Älvsjö station |
+| | 173 | Juliaborg | Älvsjö station |
+| | 163 | Juliaborg | Älvsjö station |
+| | 803 | Juliaborg | Älvsjö station |
+| To Enskede | 161 | Helgestavägen (på Årdalavägen) | Murklevägen |
+| | 163 | Juliaborg | Sockenplan |
+| | Metro 19 | Bandhagen | Sockenplan |
+| To Gullmarsplan | 144 | Juliaborg | Gullmarsplan |
+| | Metro 19 | Bandhagen | Gullmarsplan |
 
 ### To Home — Destination Groups
 
-| Display Name | Origin Stop | Lines & Destinations |
-|---|---|---|
-| From Gullmarsplan | Gullmarsplan | 144→Fruängen, 144→Älvsjö station, Metro 19→Hagsätra |
-| From Älvsjö Station | Älvsjö | 144→Gullmarsplan, 173→Skarpnäck, 163→Kärrtorp, 161→Bagarmossen, 161→Gröndal |
-| From Enskede | Sockenplan / Murklevägen | 163→Kärrtorp, 163→Bredäng, 161→Gröndal |
+| Display Name | Line | Origin Stop | Destination Stop |
+|---|---|---|---|
+| From Gullmarsplan | Metro 19 | Gullmarsplan | Bandhagen |
+| | 144 | Gullmarsplan | Juliaborg |
+| From Älvsjö Station | 161 | Älvsjö station | Helgestavägen (på Årdalavägen) |
+| | 163 | Älvsjö station | Juliaborg |
+| | 144 | Älvsjö station | Juliaborg |
+| | 173 | Älvsjö station | Juliaborg |
+| | 803 | Älvsjö station | Juliaborg |
+| From Enskede | 163 | Sockenplan | Juliaborg |
+| | Metro 19 | Sockenplan | Bandhagen |
+| | 161 | Murklevägen | Helgestavägen (på Årdalavägen) |
 
 ---
 
@@ -73,30 +76,26 @@ User opens app
   │
   ▼
 Frontend (React/Vite on Vercel)
-  │  fetches HOME_STOPS + RETURN_STOPS in parallel
+  │  for each unique origin+destination pair, calls
+  │  GET /api/journeys?origin=...&destination=...&lines=...
   ▼
 Backend (Express on Railway)
-  │  GET /api/buses/:stopName/grouped
+  │  resolves stop names → calls Journey Planner API
   ▼
-SL Transport API (transport.integration.sl.se/v1)
-  │  stop lookup by name → fetch departures
+SL Journey Planner API
+  │  returns matching journeys for origin→destination
   ▼
-Backend formats + groups departures by line & destination
+Backend filters by requested lines, formats response
   │
   ▼
-Frontend merges stops into destination groups
-  │  filters by time window, renders cards
+Frontend merges journey results into destination groups
+  │  sorts by departure time, renders cards
   ▼
 Auto-refresh every 30s repeats the cycle
 ```
 
-### Stop Lookup Strategy
-The backend resolves stop names to SL stop IDs using a fuzzy match:
-1. Exact name match
-2. Alias match (configured per stop)
-3. First result fallback
-
-Stop ID lookups should be cached — IDs do not change and re-fetching them on every request is wasteful.
+### "Show More" Flow
+When the user requests more departures, the frontend calls `/api/journeys` with an `after` parameter set to the last visible departure time. The backend passes this as `itdDate`/`itdTime` to the Journey Planner API to fetch later departures.
 
 ---
 
@@ -108,9 +107,40 @@ Stop ID lookups should be cached — IDs do not change and re-fetching them on e
 |---|---|---|
 | GET | `/api/buses/:stopName` | Raw departures for a stop |
 | GET | `/api/buses/:stopName/grouped` | Departures grouped by line + destination |
+| GET | `/api/journeys` | Journey Planner: journeys from origin to destination |
 | GET | `/health` | Health check |
 
-### Response — Grouped Departures
+### Query Parameters — `/api/journeys`
+
+| Parameter | Required | Description |
+|---|---|---|
+| `origin` | Yes | Origin stop name |
+| `destination` | Yes | Destination stop name |
+| `lines` | Yes | Comma-separated line numbers to filter by |
+| `after` | No | ISO 8601 timestamp; fetch journeys departing after this time |
+
+### Response — Journeys
+
+```ts
+interface JourneyResponse {
+  origin: string;
+  destination: string;
+  journeys: JourneyDeparture[];
+}
+
+interface JourneyDeparture {
+  line: string;
+  transportMode: string;    // "BUS" | "METRO" | "TRAM" | "TRAIN"
+  origin: string;
+  destination: string;
+  departureTime: string;           // ISO 8601
+  arrivalTime: string;             // ISO 8601
+  scheduledDepartureTime: string;  // ISO 8601
+  scheduledArrivalTime: string;    // ISO 8601
+}
+```
+
+### Response — Grouped Departures (legacy)
 
 ```ts
 interface GroupedResponse {

@@ -1,5 +1,5 @@
 import axios, { AxiosError } from 'axios';
-import { BusStopData, ApiErrorResponse, BusStopDataGrouped } from '../types/bus.types';
+import { BusStopData, ApiErrorResponse, BusStopDataGrouped, JourneyResponse } from '../types/bus.types';
 
 /**
  * Bus API Service
@@ -35,6 +35,35 @@ class BusService {
   async getMultipleStops(stopNames: string[]): Promise<BusStopDataGrouped[]> {
     const promises = stopNames.map(name => this.getBusStopDataGrouped(name));
     return Promise.all(promises);
+  }
+
+  /**
+   * Fetch journeys from origin to destination, optionally filtered by lines.
+   * Uses the Journey Planner API via the backend.
+   *
+   * @param origin - Origin stop name
+   * @param destination - Destination stop name
+   * @param lines - Comma-separated list of line numbers to filter by
+   * @param after - Optional ISO timestamp to fetch journeys departing after this time
+   */
+  async getJourneys(
+    origin: string,
+    destination: string,
+    lines: string,
+    after?: string
+  ): Promise<JourneyResponse> {
+    const params = new URLSearchParams({
+      origin,
+      destination,
+      lines,
+    });
+    if (after) {
+      params.set('after', after);
+    }
+    const response = await axios.get<JourneyResponse>(
+      `${API_BASE}/api/journeys?${params.toString()}`
+    );
+    return response.data;
   }
 
   /**

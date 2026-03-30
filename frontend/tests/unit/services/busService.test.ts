@@ -45,6 +45,40 @@ describe('busService', () => {
     });
   });
 
+  describe('getJourneys', () => {
+    it('should call the journeys endpoint with query params', async () => {
+      const mockResponse = {
+        origin: 'Juliaborg',
+        destination: 'Gullmarsplan',
+        journeys: [],
+      };
+      mockedAxios.get.mockResolvedValue({ data: mockResponse });
+
+      const result = await busService.getJourneys('Juliaborg', 'Gullmarsplan', '144,Metro 19');
+
+      expect(result).toEqual(mockResponse);
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        '/api/journeys?origin=Juliaborg&destination=Gullmarsplan&lines=144%2CMetro+19'
+      );
+    });
+
+    it('should include after param when provided', async () => {
+      const mockResponse = {
+        origin: 'Juliaborg',
+        destination: 'Gullmarsplan',
+        journeys: [],
+      };
+      mockedAxios.get.mockResolvedValue({ data: mockResponse });
+
+      const after = '2026-03-30T10:00:00Z';
+      await busService.getJourneys('Juliaborg', 'Gullmarsplan', '144', after);
+
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        expect.stringContaining('after=')
+      );
+    });
+  });
+
   describe('parseError', () => {
     it('should parse 404 error', () => {
       const error = {

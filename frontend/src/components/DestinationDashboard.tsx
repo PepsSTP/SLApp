@@ -24,6 +24,7 @@ export function DestinationDashboard() {
     currentView,
     setView,
     refresh,
+    loadMore,
   } = useDestinationView();
 
   const hasErrors = Object.keys(errors).length > 0;
@@ -101,8 +102,12 @@ export function DestinationDashboard() {
         )}
 
         <div className="dest-list" key={currentView}>
-          {destinationGroups.map((group) => (
-            <DestinationGroup key={group.displayName} groupResult={group} />
+          {destinationGroups.map((group, index) => (
+            <DestinationGroup
+              key={group.displayName}
+              groupResult={group}
+              onLoadMore={() => loadMore(index)}
+            />
           ))}
 
           {!loading && destinationGroups.length === 0 && !hasErrors && (
