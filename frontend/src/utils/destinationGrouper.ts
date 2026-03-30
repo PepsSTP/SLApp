@@ -61,15 +61,15 @@ export function groupByDestination(
       const response = journeysByPair.get(key);
       if (!response) continue;
 
-      for (const journey of response.journeys) {
-        if (allowedLines.has(journey.line)) {
+      for (const departure of response.departures) {
+        if (allowedLines.has(departure.line)) {
           mergedDepartures.push({
-            line: journey.line,
-            destination: journey.destination,
-            departureTime: journey.departureTime,
-            scheduled: journey.scheduledDepartureTime ?? journey.departureTime,
-            originStop: journey.origin,
-            transportMode: journey.transportMode,
+            line: departure.line,
+            destination: departure.destination,
+            departureTime: departure.departureTime,
+            scheduled: departure.scheduled ?? departure.departureTime,
+            originStop: response.origin,
+            transportMode: departure.transportMode,
           });
         }
       }

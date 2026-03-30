@@ -10,20 +10,11 @@ function makeJourneys(
   count: number,
   startMinute = 1
 ): JourneyResponse {
-  const journeys = Array.from({ length: count }, (_, i) => {
+  const departures = Array.from({ length: count }, (_, i) => {
     const t = new Date(Date.now() + (startMinute + i) * 60000).toISOString();
-    return {
-      line,
-      transportMode,
-      origin,
-      destination,
-      departureTime: t,
-      arrivalTime: t,
-      scheduledDepartureTime: t,
-      scheduledArrivalTime: t,
-    };
+    return { line, transportMode, destination, departureTime: t, scheduled: t };
   });
-  return { origin, destination, journeys };
+  return { origin, destination, departures };
 }
 
 describe('groupByDestination', () => {
@@ -52,29 +43,17 @@ describe('groupByDestination', () => {
     journeysByPair.set(pairKey('Juliaborg', 'Gullmarsplan'), {
       origin: 'Juliaborg',
       destination: 'Gullmarsplan',
-      journeys: [
-        {
-          line: '144', transportMode: 'BUS', origin: 'Juliaborg', destination: 'Gullmarsplan',
-          departureTime: t(10), arrivalTime: t(20), scheduledDepartureTime: t(10), scheduledArrivalTime: t(20),
-        },
-        {
-          line: '144', transportMode: 'BUS', origin: 'Juliaborg', destination: 'Gullmarsplan',
-          departureTime: t(20), arrivalTime: t(30), scheduledDepartureTime: t(20), scheduledArrivalTime: t(30),
-        },
+      departures: [
+        { line: '144', transportMode: 'BUS', destination: 'Fruängen', departureTime: t(10), scheduled: t(10) },
+        { line: '144', transportMode: 'BUS', destination: 'Fruängen', departureTime: t(20), scheduled: t(20) },
       ],
     });
     journeysByPair.set(pairKey('Bandhagen', 'Gullmarsplan'), {
       origin: 'Bandhagen',
       destination: 'Gullmarsplan',
-      journeys: [
-        {
-          line: 'Metro 19', transportMode: 'METRO', origin: 'Bandhagen', destination: 'Gullmarsplan',
-          departureTime: t(5), arrivalTime: t(12), scheduledDepartureTime: t(5), scheduledArrivalTime: t(12),
-        },
-        {
-          line: 'Metro 19', transportMode: 'METRO', origin: 'Bandhagen', destination: 'Gullmarsplan',
-          departureTime: t(15), arrivalTime: t(22), scheduledDepartureTime: t(15), scheduledArrivalTime: t(22),
-        },
+      departures: [
+        { line: 'Metro 19', transportMode: 'METRO', destination: 'Hässelby strand', departureTime: t(5), scheduled: t(5) },
+        { line: 'Metro 19', transportMode: 'METRO', destination: 'Hässelby strand', departureTime: t(15), scheduled: t(15) },
       ],
     });
 
@@ -147,7 +126,7 @@ describe('groupByDestination', () => {
     expect(result[0].departures).toHaveLength(0);
   });
 
-  it('falls back to departureTime when scheduledDepartureTime is absent', () => {
+  it('falls back to departureTime when scheduled is absent', () => {
     const now = Date.now();
     const t = (min: number) => new Date(now + min * 60000).toISOString();
     const key = pairKey('Juliaborg', 'Gullmarsplan');
@@ -156,16 +135,13 @@ describe('groupByDestination', () => {
     journeysByPair.set(key, {
       origin: 'Juliaborg',
       destination: 'Gullmarsplan',
-      journeys: [
+      departures: [
         {
           line: '144',
           transportMode: 'BUS',
-          origin: 'Juliaborg',
-          destination: 'Gullmarsplan',
+          destination: 'Fruängen',
           departureTime: t(5),
-          arrivalTime: t(15),
-          scheduledDepartureTime: undefined as unknown as string,
-          scheduledArrivalTime: t(15),
+          scheduled: undefined as unknown as string,
         },
       ],
     });
@@ -191,15 +167,9 @@ describe('groupByDestination', () => {
     journeysByPair.set(key, {
       origin: 'Juliaborg',
       destination: 'Älvsjö station',
-      journeys: [
-        {
-          line: '144', transportMode: 'BUS', origin: 'Juliaborg', destination: 'Älvsjö station',
-          departureTime: t(5), arrivalTime: t(15), scheduledDepartureTime: t(5), scheduledArrivalTime: t(15),
-        },
-        {
-          line: '163', transportMode: 'BUS', origin: 'Juliaborg', destination: 'Älvsjö station',
-          departureTime: t(8), arrivalTime: t(18), scheduledDepartureTime: t(8), scheduledArrivalTime: t(18),
-        },
+      departures: [
+        { line: '144', transportMode: 'BUS', destination: 'Älvsjö station', departureTime: t(5), scheduled: t(5) },
+        { line: '163', transportMode: 'BUS', destination: 'Kärrtorp', departureTime: t(8), scheduled: t(8) },
       ],
     });
 
@@ -229,15 +199,9 @@ describe('groupByDestination', () => {
     journeysByPair.set(key, {
       origin: 'Juliaborg',
       destination: 'Gullmarsplan',
-      journeys: [
-        {
-          line: '144', transportMode: 'BUS', origin: 'Juliaborg', destination: 'Gullmarsplan',
-          departureTime: t(5), arrivalTime: t(15), scheduledDepartureTime: t(5), scheduledArrivalTime: t(15),
-        },
-        {
-          line: '999', transportMode: 'BUS', origin: 'Juliaborg', destination: 'Gullmarsplan',
-          departureTime: t(3), arrivalTime: t(13), scheduledDepartureTime: t(3), scheduledArrivalTime: t(13),
-        },
+      departures: [
+        { line: '144', transportMode: 'BUS', destination: 'Fruängen', departureTime: t(5), scheduled: t(5) },
+        { line: '999', transportMode: 'BUS', destination: 'Somewhere', departureTime: t(3), scheduled: t(3) },
       ],
     });
 

@@ -22,7 +22,7 @@ These are non-negotiable. Any change to the app must preserve these behaviours.
 
 1. **From Home view** — Shows departures from home stops, grouped by destination area (Älvsjö Station, Enskede, Gullmarsplan).
 2. **To Home view** — Shows departures from destination stops back towards home, grouped by return location (Gullmarsplan, Älvsjö Station, Enskede).
-3. **Real-time data** — Departures are fetched from the Stockholm SL Transport API and reflect live times.
+3. **Real-time data** — Departures are fetched from the SL Journey Planner API and reflect live times.
 4. **Auto-refresh** — Data refreshes automatically every 30 seconds without user interaction.
 5. **Manual refresh** — A refresh button lets the user force an immediate update.
 6. **Relative + absolute times** — Each departure shows both a relative time ("5 min", "Now") and a clock time ("08:42").
@@ -95,7 +95,7 @@ Auto-refresh every 30s repeats the cycle
 ```
 
 ### "Show More" Flow
-When the user requests more departures, the frontend calls `/api/journeys` with an `after` parameter set to the last visible departure time. The backend passes this as `itdDate`/`itdTime` to the Journey Planner API to fetch later departures.
+Currently "Show more" expands the time window filter on the client side. Full pagination via `/api/journeys?after={ISO timestamp}` is tracked in PEP-16b.
 
 ---
 
@@ -125,18 +125,15 @@ When the user requests more departures, the frontend calls `/api/journeys` with 
 interface JourneyResponse {
   origin: string;
   destination: string;
-  journeys: JourneyDeparture[];
+  departures: JourneyDeparture[];
 }
 
 interface JourneyDeparture {
   line: string;
-  transportMode: string;    // "BUS" | "METRO" | "TRAM" | "TRAIN"
-  origin: string;
-  destination: string;
-  departureTime: string;           // ISO 8601
-  arrivalTime: string;             // ISO 8601
-  scheduledDepartureTime: string;  // ISO 8601
-  scheduledArrivalTime: string;    // ISO 8601
+  destination: string;   // line terminus (what the vehicle sign says)
+  departureTime: string; // ISO 8601 UTC — real-time if available, else scheduled
+  scheduled: string;     // ISO 8601 UTC — scheduled timetable time
+  transportMode: string; // "BUS" | "METRO" | "TRAM" | "TRAIN"
 }
 ```
 
@@ -166,9 +163,9 @@ interface Departure {
 
 | Status | Meaning |
 |---|---|
-| 404 | Stop not found in SL API |
-| 429 | Rate limit exceeded (60 req/min per IP) |
-| 502/503 | SL API unavailable |
+| 400 | Missing required query parameter |
+| 404 | Stop name not found in stop ID config |
+| 502/503 | Journey Planner API unavailable |
 | 500 | Unexpected server error |
 
 ---
@@ -205,12 +202,18 @@ DestinationDashboard
 ### Backend
 ```
 Express Server
-├── Routes:      /api/buses/:stopName, /api/buses/:stopName/grouped
-├── Controller:  BusController — request handling, error routing
-├── Service:     SLService — SL API orchestration, stop lookup, departure fetch
-└── Utils:
-    ├── departureFormatter — normalises SL API response shape
-    └── lineGrouper        — groups departures by line + destination
+├── Routes:
+│   ├── /api/journeys               — Journey Planner endpoint (primary)
+│   ├── /api/buses/:stopName/grouped — legacy grouped departures
+│   └── /api/buses/:stopName        — legacy raw departures
+├── Controllers:
+│   ├── JourneyController — handles /api/journeys, error routing
+│   └── BusController     — handles /api/buses/:stopName routes
+├── Services:
+│   ├── JourneyPlannerService — calls journeyplanner.integration.sl.se, filters by line
+│   └── SLService             — legacy stop lookup + departure fetch
+└── Config:
+    └── stopIds — hardcoded stop name → Journey Planner ID mapping
 ```
 
 ---
@@ -219,23 +222,17 @@ Express Server
 
 Issues are tracked in Linear (project: PepsSTP).
 
-### In Review / Todo
-| ID | Issue | Status |
-|---|---|---|
-| PEP-13 | Tap departure to view full details | In Review |
-| PEP-14 | Fix departure detail sheet obscured by bottom nav on mobile | Todo |
-| PEP-15 | Fix departure cap cutting off "Show more" on combined destination groups | Todo |
-
 ### Backlog
 | ID | Issue |
 |---|---|
 | PEP-6 | User-configurable stops via UI |
-| PEP-7 | Server-side caching for SL API responses |
-| PEP-8 | Retry backoff + circuit breaker for SL API errors |
+| PEP-7 | Server-side caching for Journey Planner API responses |
+| PEP-8 | Retry backoff + circuit breaker for Journey Planner API errors |
 | PEP-9 | ARIA live regions for real-time updates |
 | PEP-10 | Configurable refresh interval and time window |
 | PEP-11 | OpenAPI/Swagger documentation |
 | PEP-12 | Replace polling with WebSocket push |
+| PEP-16b | "Show more" via Journey Planner pagination (`after` param) |
 
 ### Possible future scope
 - User authentication (if the app becomes multi-user)

@@ -61,17 +61,14 @@ export interface BusSearchState {
  */
 
 /**
- * A single journey departure from the Journey Planner API
+ * A single departure from the Journey Planner API (/api/journeys)
  */
 export interface JourneyDeparture {
   line: string;
-  transportMode: string;
-  origin: string;
-  destination: string;
-  departureTime: string;   // ISO 8601
-  arrivalTime: string;     // ISO 8601
-  scheduledDepartureTime: string; // ISO 8601
-  scheduledArrivalTime: string;   // ISO 8601
+  destination: string;   // line terminus (what the vehicle sign says)
+  departureTime: string; // ISO 8601 UTC — real-time if available, else scheduled
+  scheduled: string;     // ISO 8601 UTC — scheduled timetable time
+  transportMode: string; // "BUS" | "METRO" | "TRAM" | "TRAIN"
 }
 
 /**
@@ -80,5 +77,5 @@ export interface JourneyDeparture {
 export interface JourneyResponse {
   origin: string;
   destination: string;
-  journeys: JourneyDeparture[];
+  departures: JourneyDeparture[];
 }
