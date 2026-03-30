@@ -11,7 +11,7 @@ class JourneyController {
    * GET /api/journeys?origin=Bandhagen&destination=Gullmarsplan&lines=Metro+19
    */
   async getJourneys(req: Request, res: Response): Promise<void> {
-    const { origin, destination, lines } = req.query;
+    const { origin, destination, lines, after } = req.query;
 
     if (!origin || typeof origin !== 'string') {
       res.status(400).json({
@@ -40,7 +40,8 @@ class JourneyController {
     const linesList = lines.split(',').map(l => l.trim()).filter(Boolean);
 
     try {
-      const result = await journeyPlannerService.getJourneys(origin, destination, linesList);
+      const afterParam = typeof after === 'string' ? after : undefined;
+      const result = await journeyPlannerService.getJourneys(origin, destination, linesList, afterParam);
       res.json(result);
     } catch (error) {
       this.handleError(error, res);

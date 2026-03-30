@@ -28,8 +28,21 @@ class JourneyPlannerService {
   /**
    * Fetch journeys from the SL Journey Planner API.
    */
-  async fetchJourneys(originId: string, destinationId: string): Promise<JourneyPlannerResponse> {
-    const url = `${this.baseUrl}/trips?type_origin=any&name_origin=${originId}&type_destination=any&name_destination=${destinationId}&calc_number_of_trips=3`;
+  async fetchJourneys(originId: string, destinationId: string, after?: string): Promise<JourneyPlannerResponse> {
+    let url = `${this.baseUrl}/trips?type_origin=any&name_origin=${originId}&type_destination=any&name_destination=${destinationId}&calc_number_of_trips=3`;
+
+    if (after) {
+      const date = new Date(after);
+      if (!isNaN(date.getTime())) {
+        const itdDate = date.getFullYear().toString() +
+          String(date.getMonth() + 1).padStart(2, '0') +
+          String(date.getDate()).padStart(2, '0');
+        const itdTime = String(date.getHours()).padStart(2, '0') +
+          String(date.getMinutes()).padStart(2, '0');
+        url += `&itdDate=${itdDate}&itdTime=${itdTime}&depArrMacro=dep`;
+      }
+    }
+
     console.log(`Fetching journeys from: ${url}`);
 
     const response = await fetch(url);
@@ -54,7 +67,7 @@ class JourneyPlannerService {
   /**
    * Get departures for a given origin, destination, and set of lines.
    */
-  async getJourneys(origin: string, destination: string, lines: string[]): Promise<JourneyResponse> {
+  async getJourneys(origin: string, destination: string, lines: string[], after?: string): Promise<JourneyResponse> {
     const originId = getStopId(origin);
     if (!originId) {
       throw new Error(`Stop "${origin}" not found`);
@@ -65,7 +78,7 @@ class JourneyPlannerService {
       throw new Error(`Stop "${destination}" not found`);
     }
 
-    const data = await this.fetchJourneys(originId, destinationId);
+    const data = await this.fetchJourneys(originId, destinationId, after);
 
     const linesLower = lines.map(l => l.toLowerCase());
 
