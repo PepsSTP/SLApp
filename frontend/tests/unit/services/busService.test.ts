@@ -45,6 +45,32 @@ describe('busService', () => {
     });
   });
 
+  describe('getBusStopDataGrouped', () => {
+    it('should fetch grouped bus stop data', async () => {
+      const mockGrouped = { stopName: 'T-Centralen', groupedDepartures: [] };
+      mockedAxios.get.mockResolvedValue({ data: mockGrouped });
+
+      const result = await busService.getBusStopDataGrouped('T-Centralen');
+
+      expect(result).toEqual(mockGrouped);
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        '/api/buses/T-Centralen/grouped'
+      );
+    });
+  });
+
+  describe('getMultipleStops', () => {
+    it('should fetch multiple stops in parallel', async () => {
+      const mockGrouped = { stopName: 'T-Centralen', groupedDepartures: [] };
+      mockedAxios.get.mockResolvedValue({ data: mockGrouped });
+
+      const result = await busService.getMultipleStops(['T-Centralen', 'Gullmarsplan']);
+
+      expect(result).toHaveLength(2);
+      expect(mockedAxios.get).toHaveBeenCalledTimes(2);
+    });
+  });
+
   describe('getJourneys', () => {
     it('should call the journeys endpoint with query params', async () => {
       const mockResponse = {

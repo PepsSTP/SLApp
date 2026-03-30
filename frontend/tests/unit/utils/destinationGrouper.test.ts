@@ -131,6 +131,95 @@ describe('groupByDestination', () => {
     expect(result[0].departures).toHaveLength(3);
   });
 
+  it('handles missing pair in journeysByPair gracefully', () => {
+    const journeysByPair = new Map<string, JourneyResponse>();
+    // Deliberately empty — no data for the pair
+
+    const groups: DestinationGroup[] = [
+      {
+        displayName: 'To Gullmarsplan',
+        routes: [{ line: '144', originStop: 'Juliaborg', destinationStop: 'Gullmarsplan' }],
+      },
+    ];
+
+    const result = groupByDestination(journeysByPair, groups);
+
+    expect(result[0].departures).toHaveLength(0);
+  });
+
+  it('falls back to departureTime when scheduledDepartureTime is absent', () => {
+    const now = Date.now();
+    const t = (min: number) => new Date(now + min * 60000).toISOString();
+    const key = pairKey('Juliaborg', 'Gullmarsplan');
+
+    const journeysByPair = new Map<string, JourneyResponse>();
+    journeysByPair.set(key, {
+      origin: 'Juliaborg',
+      destination: 'Gullmarsplan',
+      journeys: [
+        {
+          line: '144',
+          transportMode: 'BUS',
+          origin: 'Juliaborg',
+          destination: 'Gullmarsplan',
+          departureTime: t(5),
+          arrivalTime: t(15),
+          scheduledDepartureTime: undefined as unknown as string,
+          scheduledArrivalTime: t(15),
+        },
+      ],
+    });
+
+    const groups: DestinationGroup[] = [
+      {
+        displayName: 'To Gullmarsplan',
+        routes: [{ line: '144', originStop: 'Juliaborg', destinationStop: 'Gullmarsplan' }],
+      },
+    ];
+
+    const result = groupByDestination(journeysByPair, groups);
+
+    expect(result[0].departures[0].scheduled).toBe(result[0].departures[0].departureTime);
+  });
+
+  it('merges multiple lines for the same origin+destination pair', () => {
+    const now = Date.now();
+    const t = (min: number) => new Date(now + min * 60000).toISOString();
+    const key = pairKey('Juliaborg', 'Älvsjö station');
+
+    const journeysByPair = new Map<string, JourneyResponse>();
+    journeysByPair.set(key, {
+      origin: 'Juliaborg',
+      destination: 'Älvsjö station',
+      journeys: [
+        {
+          line: '144', transportMode: 'BUS', origin: 'Juliaborg', destination: 'Älvsjö station',
+          departureTime: t(5), arrivalTime: t(15), scheduledDepartureTime: t(5), scheduledArrivalTime: t(15),
+        },
+        {
+          line: '163', transportMode: 'BUS', origin: 'Juliaborg', destination: 'Älvsjö station',
+          departureTime: t(8), arrivalTime: t(18), scheduledDepartureTime: t(8), scheduledArrivalTime: t(18),
+        },
+      ],
+    });
+
+    const groups: DestinationGroup[] = [
+      {
+        displayName: 'To Älvsjö Station',
+        routes: [
+          { line: '144', originStop: 'Juliaborg', destinationStop: 'Älvsjö station' },
+          { line: '163', originStop: 'Juliaborg', destinationStop: 'Älvsjö station' },
+        ],
+      },
+    ];
+
+    const result = groupByDestination(journeysByPair, groups);
+
+    expect(result[0].departures).toHaveLength(2);
+    expect(result[0].departures[0].line).toBe('144');
+    expect(result[0].departures[1].line).toBe('163');
+  });
+
   it('only includes lines matching the route config', () => {
     const key = pairKey('Juliaborg', 'Gullmarsplan');
     const now = Date.now();
