@@ -236,5 +236,34 @@ describe('API Integration Tests', () => {
       expect(response.status).toBe(500);
       expect(response.body.error).toBe('Internal Server Error');
     });
+
+    it('should pass after param to journeyPlannerService when provided', async () => {
+      (journeyPlannerService.getJourneys as jest.Mock).mockResolvedValue(mockJourneyResult);
+
+      const response = await request(app)
+        .get('/api/journeys?origin=Bandhagen&destination=Gullmarsplan&lines=Metro+19&after=2024-01-15T10:30:00Z');
+
+      expect(response.status).toBe(200);
+      expect(journeyPlannerService.getJourneys).toHaveBeenCalledWith(
+        'Bandhagen',
+        'Gullmarsplan',
+        ['Metro 19'],
+        '2024-01-15T10:30:00Z'
+      );
+    });
+
+    it('should pass undefined for after when not provided', async () => {
+      (journeyPlannerService.getJourneys as jest.Mock).mockResolvedValue(mockJourneyResult);
+
+      await request(app)
+        .get('/api/journeys?origin=Bandhagen&destination=Gullmarsplan&lines=Metro+19');
+
+      expect(journeyPlannerService.getJourneys).toHaveBeenCalledWith(
+        'Bandhagen',
+        'Gullmarsplan',
+        ['Metro 19'],
+        undefined
+      );
+    });
   });
 });

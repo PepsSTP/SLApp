@@ -421,5 +421,70 @@ describe('JourneyPlannerService', () => {
 
       expect(result.departures).toHaveLength(1);
     });
+
+    it('should pass after param to fetchJourneys and include itdDate/itdTime in URL', async () => {
+      const mockResponse = {
+        journeys: [
+          {
+            legs: [
+              {
+                transportation: {
+                  number: 'tunnelbanans gröna linje 19',
+                  disassembledName: '19',
+                  product: { name: 'Tunnelbana' },
+                  destination: { name: 'Hässelby strand' },
+                },
+                origin: {
+                  departureTimePlanned: '2024-01-15T11:00:00Z',
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['19'], '2024-01-15T10:30:00Z');
+
+      const calledUrl = (global.fetch as jest.Mock).mock.calls[0][0] as string;
+      expect(calledUrl).toContain('itdDate=20240115');
+      expect(calledUrl).toContain('itdTime=');
+      expect(calledUrl).toContain('depArrMacro=dep');
+    });
+
+    it('should not include itdDate/itdTime when after is not provided', async () => {
+      const mockResponse = { journeys: [] };
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['19']);
+
+      const calledUrl = (global.fetch as jest.Mock).mock.calls[0][0] as string;
+      expect(calledUrl).not.toContain('itdDate');
+      expect(calledUrl).not.toContain('itdTime');
+      expect(calledUrl).not.toContain('depArrMacro');
+    });
+
+    it('should ignore invalid after parameter gracefully', async () => {
+      const mockResponse = { journeys: [] };
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['19'], 'not-a-date');
+
+      const calledUrl = (global.fetch as jest.Mock).mock.calls[0][0] as string;
+      expect(calledUrl).not.toContain('itdDate');
+      expect(calledUrl).not.toContain('itdTime');
+    });
   });
 });
