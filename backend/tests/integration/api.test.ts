@@ -2,10 +2,12 @@ import request from 'supertest';
 import express from 'express';
 import apiRoutes from '../../src/routes/api';
 import slService from '../../src/services/slService';
+import journeyPlannerService from '../../src/services/journeyPlannerService';
 import { mockBusStopData } from '../fixtures/slApiResponses';
 
 // Mock the slService
 jest.mock('../../src/services/slService');
+jest.mock('../../src/services/journeyPlannerService');
 
 // Create express app for testing
 const app = express();
@@ -146,6 +148,93 @@ describe('API Integration Tests', () => {
         expect(bus).toHaveProperty('destination');
         expect(bus).toHaveProperty('departureTime');
       });
+    });
+  });
+
+  describe('GET /api/journeys', () => {
+    const mockJourneyResult = {
+      origin: 'Bandhagen',
+      destination: 'Gullmarsplan',
+      departures: [
+        {
+          line: 'Metro 19',
+          destination: 'Hässelby strand',
+          departureTime: '2024-01-15T10:32:00Z',
+          scheduled: '2024-01-15T10:30:00Z',
+          transportMode: 'METRO',
+        },
+      ],
+    };
+
+    it('should return journey data for valid params', async () => {
+      (journeyPlannerService.getJourneys as jest.Mock).mockResolvedValue(mockJourneyResult);
+
+      const response = await request(app)
+        .get('/api/journeys?origin=Bandhagen&destination=Gullmarsplan&lines=Metro+19');
+
+      expect(response.status).toBe(200);
+      expect(response.body.origin).toBe('Bandhagen');
+      expect(response.body.destination).toBe('Gullmarsplan');
+      expect(Array.isArray(response.body.departures)).toBe(true);
+    });
+
+    it('should return 400 when origin is missing', async () => {
+      const response = await request(app)
+        .get('/api/journeys?destination=Gullmarsplan&lines=Metro+19');
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Bad Request');
+    });
+
+    it('should return 400 when destination is missing', async () => {
+      const response = await request(app)
+        .get('/api/journeys?origin=Bandhagen&lines=Metro+19');
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Bad Request');
+    });
+
+    it('should return 400 when lines is missing', async () => {
+      const response = await request(app)
+        .get('/api/journeys?origin=Bandhagen&destination=Gullmarsplan');
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Bad Request');
+    });
+
+    it('should return 404 when stop is not found', async () => {
+      (journeyPlannerService.getJourneys as jest.Mock).mockRejectedValue(
+        new Error('Stop "Unknown" not found')
+      );
+
+      const response = await request(app)
+        .get('/api/journeys?origin=Unknown&destination=Gullmarsplan&lines=Metro+19');
+
+      expect(response.status).toBe(404);
+      expect(response.body.error).toBe('Not Found');
+    });
+
+    it('should return 502 when Journey Planner API is unavailable', async () => {
+      (journeyPlannerService.getJourneys as jest.Mock).mockRejectedValue(
+        new Error('Journey Planner API Error: Failed to fetch journeys (status 502)')
+      );
+
+      const response = await request(app)
+        .get('/api/journeys?origin=Bandhagen&destination=Gullmarsplan&lines=Metro+19');
+
+      expect(response.status).toBe(502);
+    });
+
+    it('should return 500 for unexpected errors', async () => {
+      (journeyPlannerService.getJourneys as jest.Mock).mockRejectedValue(
+        new Error('Unexpected error')
+      );
+
+      const response = await request(app)
+        .get('/api/journeys?origin=Bandhagen&destination=Gullmarsplan&lines=Metro+19');
+
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBe('Internal Server Error');
     });
   });
 });
