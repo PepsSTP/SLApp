@@ -1,5 +1,4 @@
-import { BusStopDataGrouped } from '../types/bus.types';
-import { DestinationGroup, STOP_TRANSPORT_FILTERS } from '../config/destinations';
+import { JourneyDeparture } from '../types/bus.types';
 
 /**
  * Represents a single merged departure with origin stop information
@@ -22,72 +21,37 @@ export interface DestinationGroupResult {
 }
 
 /**
- * Groups departures from multiple stops by destination areas
+ * Merges journey departures from multiple origin→destination pairs
+ * into a single sorted list for a destination group.
  *
- * @param stops - Array of stop data with grouped departures
- * @param destinationGroups - Configuration of destination groupings
- * @param maxDeparturesPerGroup - Maximum number of departures to show per destination (default: 5)
- * @returns Array of destination groups with merged, sorted departures
+ * @param displayName - The display name for this group
+ * @param journeys - Array of journey departures from all requests for this group
+ * @param maxDepartures - Maximum number of departures to include (default: 30)
+ * @returns A destination group result with merged, sorted departures
  */
-export function groupByDestination(
-  stops: BusStopDataGrouped[],
-  destinationGroups: DestinationGroup[],
-  maxDeparturesPerGroup: number = 30
-): DestinationGroupResult[] {
-  const results: DestinationGroupResult[] = [];
+export function mergeJourneys(
+  displayName: string,
+  journeys: JourneyDeparture[],
+  maxDepartures: number = 30
+): DestinationGroupResult {
+  const departures: MergedDeparture[] = journeys.map(j => ({
+    line: j.line,
+    destination: j.destination,
+    departureTime: j.departureTime,
+    scheduled: j.scheduled ?? j.departureTime,
+    originStop: j.origin,
+    transportMode: j.transportMode,
+  }));
 
-  // Process each destination group
-  for (const destinationGroup of destinationGroups) {
-    const mergedDepartures: MergedDeparture[] = [];
+  // Sort by departure time (earliest first)
+  departures.sort((a, b) => {
+    const timeA = new Date(a.departureTime).getTime();
+    const timeB = new Date(b.departureTime).getTime();
+    return timeA - timeB;
+  });
 
-    // For each stop, find matching departures
-    for (const stop of stops) {
-      // Apply transport mode filter if configured for this stop
-      const allowedModes = STOP_TRANSPORT_FILTERS[stop.stopName];
-      const filteredDepartures = allowedModes
-        ? stop.groupedDepartures.filter(dep => allowedModes.includes(dep.transportMode))
-        : stop.groupedDepartures;
-
-      for (const groupedDeparture of filteredDepartures) {
-        // Check if this line + destination + origin matches any route in this destination group
-        const matchingRoute = destinationGroup.routes.find(
-          route =>
-            route.line === groupedDeparture.line &&
-            route.destination === groupedDeparture.destination &&
-            (!route.originStop || route.originStop === stop.stopName)
-        );
-
-        if (matchingRoute) {
-          // Add all departures from this line to the merged list
-          for (const departure of groupedDeparture.departures) {
-            mergedDepartures.push({
-              line: groupedDeparture.line,
-              destination: groupedDeparture.destination,
-              departureTime: departure.departureTime,
-              scheduled: departure.scheduled ?? departure.departureTime,
-              originStop: stop.stopName,
-              transportMode: groupedDeparture.transportMode
-            });
-          }
-        }
-      }
-    }
-
-    // Sort merged departures by time (earliest first)
-    mergedDepartures.sort((a, b) => {
-      const timeA = new Date(a.departureTime).getTime();
-      const timeB = new Date(b.departureTime).getTime();
-      return timeA - timeB;
-    });
-
-    // Take only the first N departures
-    const limitedDepartures = mergedDepartures.slice(0, maxDeparturesPerGroup);
-
-    results.push({
-      displayName: destinationGroup.displayName,
-      departures: limitedDepartures
-    });
-  }
-
-  return results;
+  return {
+    displayName,
+    departures: departures.slice(0, maxDepartures),
+  };
 }

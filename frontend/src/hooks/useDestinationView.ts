@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import busService from '../services/busService';
-import { BusStopDataGrouped } from '../types/bus.types';
-import { groupByDestination, DestinationGroupResult } from '../utils/destinationGrouper';
+import { JourneyDeparture } from '../types/bus.types';
+import { mergeJourneys, DestinationGroupResult } from '../utils/destinationGrouper';
 import {
-  HOME_STOPS,
-  RETURN_STOPS,
+  DestinationGroup,
   FROM_HOME_DESTINATIONS,
   TO_HOME_DESTINATIONS
 } from '../config/destinations';
@@ -21,30 +20,76 @@ interface UseDestinationViewResult {
 }
 
 /**
- * Fetches a list of stops, returning a map of stopName → data and an errors map.
- * Uses the API-returned stopName as the key (may differ slightly from search term).
+ * For a destination group, groups routes by unique origin+destination pair,
+ * then fetches journeys for each pair (combining lines that share the same pair).
+ * Returns all journey departures merged together.
  */
-async function fetchStops(stopNames: string[]): Promise<{
-  stops: BusStopDataGrouped[];
-  errors: { [key: string]: string };
-}> {
+async function fetchGroupJourneys(
+  group: DestinationGroup,
+  after?: string
+): Promise<{ journeys: JourneyDeparture[]; errors: string[] }> {
+  // Group routes by origin+destination pair
+  const pairMap = new Map<string, string[]>();
+  for (const route of group.routes) {
+    const key = `${route.originStop}|||${route.destinationStop}`;
+    const lines = pairMap.get(key) ?? [];
+    lines.push(route.line);
+    pairMap.set(key, lines);
+  }
+
+  // Fetch journeys for each unique pair
   const results = await Promise.allSettled(
-    stopNames.map(name => busService.getBusStopDataGrouped(name))
+    Array.from(pairMap.entries()).map(([key, lines]) => {
+      const [origin, destination] = key.split('|||');
+      return busService.getJourneys(origin, destination, lines, after);
+    })
   );
-  const stops: BusStopDataGrouped[] = [];
-  const errors: { [key: string]: string } = {};
-  results.forEach((result, index) => {
+
+  const journeys: JourneyDeparture[] = [];
+  const errors: string[] = [];
+
+  for (const result of results) {
     if (result.status === 'fulfilled') {
-      stops.push(result.value);
+      journeys.push(...result.value.journeys);
     } else {
-      errors[stopNames[index]] = result.reason?.message || 'Failed to load';
+      errors.push(result.reason?.message || 'Failed to load journeys');
     }
-  });
-  return { stops, errors };
+  }
+
+  return { journeys, errors };
 }
 
 /**
- * Fetches all home and return stops in parallel, then derives both views.
+ * Fetches all destination groups for a view (from-home or to-home).
+ */
+async function fetchAllGroups(
+  destinationGroups: DestinationGroup[]
+): Promise<{
+  groups: DestinationGroupResult[];
+  errors: { [key: string]: string };
+}> {
+  const results = await Promise.all(
+    destinationGroups.map(async (group) => {
+      const { journeys, errors } = await fetchGroupJourneys(group);
+      return { group, journeys, errors };
+    })
+  );
+
+  const groups: DestinationGroupResult[] = [];
+  const errors: { [key: string]: string } = {};
+
+  for (const { group, journeys, errors: groupErrors } of results) {
+    groups.push(mergeJourneys(group.displayName, journeys));
+    if (groupErrors.length > 0) {
+      errors[group.displayName] = groupErrors.join('; ');
+    }
+  }
+
+  return { groups, errors };
+}
+
+/**
+ * Fetches all home and return destination groups in parallel, then derives both views.
  * Switching between views is instant since both are cached.
  */
 export function useDestinationView(): UseDestinationViewResult {
@@ -60,20 +105,19 @@ export function useDestinationView(): UseDestinationViewResult {
   const intervalRef = useRef<number | null>(null);
 
   /**
-   * Loads all stops for both views simultaneously, then updates cached state.
-   * Both views refresh together so no delay on switch.
+   * Loads all destination groups for both views simultaneously.
    */
   const loadAllData = useCallback(async () => {
-    const [homeResult, returnResult] = await Promise.all([
-      fetchStops(HOME_STOPS),
-      fetchStops(RETURN_STOPS)
+    const [fromHomeResult, toHomeResult] = await Promise.all([
+      fetchAllGroups(FROM_HOME_DESTINATIONS),
+      fetchAllGroups(TO_HOME_DESTINATIONS)
     ]);
 
-    setFromHomeGroups(groupByDestination(homeResult.stops, FROM_HOME_DESTINATIONS));
-    setFromHomeErrors(homeResult.errors);
+    setFromHomeGroups(fromHomeResult.groups);
+    setFromHomeErrors(fromHomeResult.errors);
 
-    setToHomeGroups(groupByDestination(returnResult.stops, TO_HOME_DESTINATIONS));
-    setToHomeErrors(returnResult.errors);
+    setToHomeGroups(toHomeResult.groups);
+    setToHomeErrors(toHomeResult.errors);
 
     setLastUpdated(new Date());
     setLoading(false);

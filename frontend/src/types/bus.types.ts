@@ -55,3 +55,25 @@ export interface BusSearchState {
   loading: boolean;
   error: string | null;
 }
+
+/**
+ * A single journey departure from the Journey Planner API
+ */
+export interface JourneyDeparture {
+  line: string;
+  transportMode: string;
+  origin: string;
+  destination: string;
+  departureTime: string;  // ISO 8601
+  arrivalTime: string;    // ISO 8601
+  scheduled: string;      // ISO 8601 — scheduled (timetable) departure time
+}
+
+/**
+ * Response from GET /api/journeys
+ */
+export interface JourneyResponse {
+  origin: string;
+  destination: string;
+  journeys: JourneyDeparture[];
+}

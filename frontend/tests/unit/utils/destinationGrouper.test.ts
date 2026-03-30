@@ -1,103 +1,95 @@
-import { groupByDestination } from '../../../src/utils/destinationGrouper';
-import { BusStopDataGrouped } from '../../../src/types/bus.types';
-import { DestinationGroup } from '../../../src/config/destinations';
+import { mergeJourneys } from '../../../src/utils/destinationGrouper';
+import { JourneyDeparture } from '../../../src/types/bus.types';
 
-function makeStops(
+function makeJourney(
   line: string,
+  origin: string,
   destination: string,
   transportMode: string,
-  count: number,
-  startMinute = 1
-): BusStopDataGrouped {
-  const departures = Array.from({ length: count }, (_, i) => {
-    const t = new Date(Date.now() + (startMinute + i) * 60000).toISOString();
-    return { line, destination, departureTime: t, scheduled: t };
-  });
+  minutesFromNow: number
+): JourneyDeparture {
+  const t = new Date(Date.now() + minutesFromNow * 60000).toISOString();
   return {
-    stopName: 'TestStop',
-    groupedDepartures: [{ line, transportMode, destination, departures }],
+    line,
+    transportMode,
+    origin,
+    destination,
+    departureTime: t,
+    arrivalTime: new Date(Date.now() + (minutesFromNow + 10) * 60000).toISOString(),
+    scheduled: t,
   };
 }
 
-describe('groupByDestination', () => {
-  it('defaults to a cap of 30 departures per group', () => {
-    const stops = [makeStops('144', 'Gullmarsplan', 'BUS', 35)];
-    const groups: DestinationGroup[] = [
-      { displayName: 'To Gullmarsplan', routes: [{ line: '144', destination: 'Gullmarsplan' }] },
-    ];
+describe('mergeJourneys', () => {
+  it('defaults to a cap of 30 departures', () => {
+    const journeys = Array.from({ length: 35 }, (_, i) =>
+      makeJourney('144', 'Juliaborg', 'Gullmarsplan', 'BUS', i + 1)
+    );
 
-    const result = groupByDestination(stops, groups);
+    const result = mergeJourneys('To Gullmarsplan', journeys);
 
-    expect(result[0].departures).toHaveLength(30);
+    expect(result.departures).toHaveLength(30);
   });
 
   it('merges departures from two lines and sorts by time', () => {
-    const now = Date.now();
-    const t = (min: number) => new Date(now + min * 60000).toISOString();
-
-    const stops: BusStopDataGrouped[] = [
-      {
-        stopName: 'TestStop',
-        groupedDepartures: [
-          {
-            line: '144',
-            transportMode: 'BUS',
-            destination: 'Gullmarsplan',
-            departures: [
-              { line: '144', destination: 'Gullmarsplan', departureTime: t(10), scheduled: t(10) },
-              { line: '144', destination: 'Gullmarsplan', departureTime: t(20), scheduled: t(20) },
-            ],
-          },
-          {
-            line: 'Metro 19',
-            transportMode: 'METRO',
-            destination: 'Hässelby strand',
-            departures: [
-              { line: 'Metro 19', destination: 'Hässelby strand', departureTime: t(5), scheduled: t(5) },
-              { line: 'Metro 19', destination: 'Hässelby strand', departureTime: t(15), scheduled: t(15) },
-            ],
-          },
-        ],
-      },
-    ];
-    const groups: DestinationGroup[] = [
-      {
-        displayName: 'To Gullmarsplan',
-        routes: [
-          { line: '144', destination: 'Gullmarsplan' },
-          { line: 'Metro 19', destination: 'Hässelby strand' },
-        ],
-      },
+    const journeys: JourneyDeparture[] = [
+      makeJourney('144', 'Juliaborg', 'Gullmarsplan', 'BUS', 10),
+      makeJourney('144', 'Juliaborg', 'Gullmarsplan', 'BUS', 20),
+      makeJourney('Metro 19', 'Bandhagen', 'Gullmarsplan', 'METRO', 5),
+      makeJourney('Metro 19', 'Bandhagen', 'Gullmarsplan', 'METRO', 15),
     ];
 
-    const result = groupByDestination(stops, groups);
+    const result = mergeJourneys('To Gullmarsplan', journeys);
 
-    expect(result[0].departures).toHaveLength(4);
-    expect(result[0].departures[0].line).toBe('Metro 19'); // 5 min — earliest
-    expect(result[0].departures[1].line).toBe('144');      // 10 min
-    expect(result[0].departures[2].line).toBe('Metro 19'); // 15 min
-    expect(result[0].departures[3].line).toBe('144');      // 20 min
+    expect(result.departures).toHaveLength(4);
+    expect(result.departures[0].line).toBe('Metro 19'); // 5 min — earliest
+    expect(result.departures[1].line).toBe('144');      // 10 min
+    expect(result.departures[2].line).toBe('Metro 19'); // 15 min
+    expect(result.departures[3].line).toBe('144');      // 20 min
   });
 
   it('respects a custom cap passed explicitly', () => {
-    const stops = [makeStops('144', 'Gullmarsplan', 'BUS', 10)];
-    const groups: DestinationGroup[] = [
-      { displayName: 'To Gullmarsplan', routes: [{ line: '144', destination: 'Gullmarsplan' }] },
-    ];
+    const journeys = Array.from({ length: 10 }, (_, i) =>
+      makeJourney('144', 'Juliaborg', 'Gullmarsplan', 'BUS', i + 1)
+    );
 
-    const result = groupByDestination(stops, groups, 5);
+    const result = mergeJourneys('To Gullmarsplan', journeys, 5);
 
-    expect(result[0].departures).toHaveLength(5);
+    expect(result.departures).toHaveLength(5);
   });
 
   it('returns all departures when count is below cap', () => {
-    const stops = [makeStops('144', 'Gullmarsplan', 'BUS', 3)];
-    const groups: DestinationGroup[] = [
-      { displayName: 'To Gullmarsplan', routes: [{ line: '144', destination: 'Gullmarsplan' }] },
-    ];
+    const journeys = Array.from({ length: 3 }, (_, i) =>
+      makeJourney('144', 'Juliaborg', 'Gullmarsplan', 'BUS', i + 1)
+    );
 
-    const result = groupByDestination(stops, groups);
+    const result = mergeJourneys('To Gullmarsplan', journeys);
 
-    expect(result[0].departures).toHaveLength(3);
+    expect(result.departures).toHaveLength(3);
+  });
+
+  it('sets displayName from parameter', () => {
+    const journeys = [makeJourney('144', 'Juliaborg', 'Gullmarsplan', 'BUS', 5)];
+
+    const result = mergeJourneys('To Gullmarsplan', journeys);
+
+    expect(result.displayName).toBe('To Gullmarsplan');
+  });
+
+  it('maps origin to originStop in merged departures', () => {
+    const journeys = [makeJourney('144', 'Juliaborg', 'Gullmarsplan', 'BUS', 5)];
+
+    const result = mergeJourneys('To Gullmarsplan', journeys);
+
+    expect(result.departures[0].originStop).toBe('Juliaborg');
+    expect(result.departures[0].destination).toBe('Gullmarsplan');
+    expect(result.departures[0].transportMode).toBe('BUS');
+  });
+
+  it('returns empty departures when given no journeys', () => {
+    const result = mergeJourneys('To Gullmarsplan', []);
+
+    expect(result.departures).toHaveLength(0);
+    expect(result.displayName).toBe('To Gullmarsplan');
   });
 });
