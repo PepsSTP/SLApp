@@ -318,6 +318,66 @@ describe('JourneyPlannerService', () => {
       ).rejects.toThrow('Journey Planner API Error');
     });
 
+    it('should map TRAM transport mode correctly', async () => {
+      const mockResponse = {
+        journeys: [
+          {
+            legs: [
+              {
+                transportation: {
+                  number: '7',
+                  product: { name: 'Spårvagn' },
+                  destination: { name: 'Spårvägsmuseet' },
+                },
+                origin: {
+                  departureTimePlanned: '2024-01-15T10:30:00Z',
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const result = await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['7']);
+
+      expect(result.departures[0].transportMode).toBe('TRAM');
+    });
+
+    it('should map TRAIN transport mode correctly', async () => {
+      const mockResponse = {
+        journeys: [
+          {
+            legs: [
+              {
+                transportation: {
+                  number: '36',
+                  product: { name: 'Pendeltåg' },
+                  destination: { name: 'Nynäshamn' },
+                },
+                origin: {
+                  departureTimePlanned: '2024-01-15T10:30:00Z',
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const result = await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['36']);
+
+      expect(result.departures[0].transportMode).toBe('TRAIN');
+    });
+
     it('should filter lines case-insensitively', async () => {
       const mockResponse = {
         journeys: [
