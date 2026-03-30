@@ -52,8 +52,8 @@ describe('groupByDestination', () => {
       origin: 'Bandhagen',
       destination: 'Gullmarsplan',
       departures: [
-        { line: 'Metro 19', transportMode: 'METRO', destination: 'Hässelby strand', departureTime: t(5), scheduled: t(5) },
-        { line: 'Metro 19', transportMode: 'METRO', destination: 'Hässelby strand', departureTime: t(15), scheduled: t(15) },
+        { line: '19', transportMode: 'METRO', destination: 'Hässelby strand', departureTime: t(5), scheduled: t(5) },
+        { line: '19', transportMode: 'METRO', destination: 'Hässelby strand', departureTime: t(15), scheduled: t(15) },
       ],
     });
 
@@ -62,7 +62,7 @@ describe('groupByDestination', () => {
         displayName: 'To Gullmarsplan',
         routes: [
           { line: '144', originStop: 'Juliaborg', destinationStop: 'Gullmarsplan' },
-          { line: 'Metro 19', originStop: 'Bandhagen', destinationStop: 'Gullmarsplan' },
+          { line: '19', originStop: 'Bandhagen', destinationStop: 'Gullmarsplan' },
         ],
       },
     ];
@@ -70,9 +70,9 @@ describe('groupByDestination', () => {
     const result = groupByDestination(journeysByPair, groups);
 
     expect(result[0].departures).toHaveLength(4);
-    expect(result[0].departures[0].line).toBe('Metro 19'); // 5 min — earliest
+    expect(result[0].departures[0].line).toBe('19'); // 5 min — earliest
     expect(result[0].departures[1].line).toBe('144');      // 10 min
-    expect(result[0].departures[2].line).toBe('Metro 19'); // 15 min
+    expect(result[0].departures[2].line).toBe('19'); // 15 min
     expect(result[0].departures[3].line).toBe('144');      // 20 min
   });
 

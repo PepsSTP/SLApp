@@ -16,7 +16,8 @@ describe('JourneyPlannerService', () => {
             legs: [
               {
                 transportation: {
-                  number: 'Metro 19',
+                  number: 'tunnelbanans gröna linje 19',
+                  disassembledName: '19',
                   product: { name: 'Tunnelbana' },
                   destination: { name: 'Hässelby strand' },
                 },
@@ -31,7 +32,8 @@ describe('JourneyPlannerService', () => {
             legs: [
               {
                 transportation: {
-                  number: 'Metro 19',
+                  number: 'tunnelbanans gröna linje 19',
+                  disassembledName: '19',
                   product: { name: 'Tunnelbana' },
                   destination: { name: 'Hässelby strand' },
                 },
@@ -49,13 +51,13 @@ describe('JourneyPlannerService', () => {
         json: async () => mockResponse,
       });
 
-      const result = await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['Metro 19']);
+      const result = await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['19']);
 
       expect(result.origin).toBe('Bandhagen');
       expect(result.destination).toBe('Gullmarsplan');
       expect(result.departures).toHaveLength(2);
       expect(result.departures[0]).toEqual({
-        line: 'Metro 19',
+        line: '19',
         destination: 'Hässelby strand',
         departureTime: '2024-01-15T10:32:00Z',
         scheduled: '2024-01-15T10:30:00Z',
@@ -70,7 +72,8 @@ describe('JourneyPlannerService', () => {
             legs: [
               {
                 transportation: {
-                  number: 'Metro 19',
+                  number: 'tunnelbanans gröna linje 19',
+                  disassembledName: '19',
                   product: { name: 'Tunnelbana' },
                   destination: { name: 'Hässelby strand' },
                 },
@@ -84,7 +87,8 @@ describe('JourneyPlannerService', () => {
             legs: [
               {
                 transportation: {
-                  number: '144',
+                  number: 'Buss 144',
+                  disassembledName: '144',
                   product: { name: 'Buss' },
                   destination: { name: 'Fruängen' },
                 },
@@ -102,10 +106,10 @@ describe('JourneyPlannerService', () => {
         json: async () => mockResponse,
       });
 
-      const result = await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['Metro 19']);
+      const result = await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['19']);
 
       expect(result.departures).toHaveLength(1);
-      expect(result.departures[0].line).toBe('Metro 19');
+      expect(result.departures[0].line).toBe('19');
     });
 
     it('should filter out multi-leg journeys', async () => {
@@ -116,7 +120,8 @@ describe('JourneyPlannerService', () => {
             legs: [
               {
                 transportation: {
-                  number: 'Metro 19',
+                  number: 'tunnelbanans gröna linje 19',
+                  disassembledName: '19',
                   product: { name: 'Tunnelbana' },
                   destination: { name: 'Hässelby strand' },
                 },
@@ -131,7 +136,8 @@ describe('JourneyPlannerService', () => {
             legs: [
               {
                 transportation: {
-                  number: '144',
+                  number: 'Buss 144',
+                  disassembledName: '144',
                   product: { name: 'Buss' },
                   destination: { name: 'Fruängen' },
                 },
@@ -141,7 +147,8 @@ describe('JourneyPlannerService', () => {
               },
               {
                 transportation: {
-                  number: 'Metro 19',
+                  number: 'tunnelbanans gröna linje 19',
+                  disassembledName: '19',
                   product: { name: 'Tunnelbana' },
                   destination: { name: 'Hässelby strand' },
                 },
@@ -159,10 +166,10 @@ describe('JourneyPlannerService', () => {
         json: async () => mockResponse,
       });
 
-      const result = await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['Metro 19', '144']);
+      const result = await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['19', '144']);
 
       expect(result.departures).toHaveLength(1);
-      expect(result.departures[0].line).toBe('Metro 19');
+      expect(result.departures[0].line).toBe('19');
     });
 
     it('should use real-time time when available, fall back to scheduled', async () => {
@@ -172,7 +179,8 @@ describe('JourneyPlannerService', () => {
             legs: [
               {
                 transportation: {
-                  number: 'Metro 19',
+                  number: 'tunnelbanans gröna linje 19',
+                  disassembledName: '19',
                   product: { name: 'Tunnelbana' },
                   destination: { name: 'Hässelby strand' },
                 },
@@ -187,7 +195,8 @@ describe('JourneyPlannerService', () => {
             legs: [
               {
                 transportation: {
-                  number: 'Metro 19',
+                  number: 'tunnelbanans gröna linje 19',
+                  disassembledName: '19',
                   product: { name: 'Tunnelbana' },
                   destination: { name: 'Hässelby strand' },
                 },
@@ -206,7 +215,7 @@ describe('JourneyPlannerService', () => {
         json: async () => mockResponse,
       });
 
-      const result = await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['Metro 19']);
+      const result = await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['19']);
 
       // First departure: has estimated time
       expect(result.departures[0].departureTime).toBe('2024-01-15T10:33:00Z');
@@ -219,13 +228,13 @@ describe('JourneyPlannerService', () => {
 
     it('should return 404 when origin stop name is not recognised', async () => {
       await expect(
-        journeyPlannerService.getJourneys('NonExistentStop', 'Gullmarsplan', ['Metro 19'])
+        journeyPlannerService.getJourneys('NonExistentStop', 'Gullmarsplan', ['19'])
       ).rejects.toThrow('Stop "NonExistentStop" not found');
     });
 
     it('should return 404 when destination stop name is not recognised', async () => {
       await expect(
-        journeyPlannerService.getJourneys('Bandhagen', 'NonExistentStop', ['Metro 19'])
+        journeyPlannerService.getJourneys('Bandhagen', 'NonExistentStop', ['19'])
       ).rejects.toThrow('Stop "NonExistentStop" not found');
     });
 
@@ -236,7 +245,8 @@ describe('JourneyPlannerService', () => {
             legs: [
               {
                 transportation: {
-                  number: '144',
+                  number: 'Buss 144',
+                  disassembledName: '144',
                   product: { name: 'Buss' },
                   destination: { name: 'Fruängen' },
                 },
@@ -254,7 +264,7 @@ describe('JourneyPlannerService', () => {
         json: async () => mockResponse,
       });
 
-      const result = await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['Metro 19']);
+      const result = await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['19']);
 
       expect(result.departures).toEqual([]);
       expect(result.origin).toBe('Bandhagen');
@@ -268,7 +278,8 @@ describe('JourneyPlannerService', () => {
             legs: [
               {
                 transportation: {
-                  number: '144',
+                  number: 'Buss 144',
+                  disassembledName: '144',
                   product: { name: 'Buss' },
                   destination: { name: 'Fruängen' },
                 },
@@ -301,7 +312,7 @@ describe('JourneyPlannerService', () => {
         json: async () => mockResponse,
       });
 
-      const result = await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['Metro 19']);
+      const result = await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['19']);
 
       expect(result.departures).toEqual([]);
     });
@@ -314,7 +325,7 @@ describe('JourneyPlannerService', () => {
       });
 
       await expect(
-        journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['Metro 19'])
+        journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['19'])
       ).rejects.toThrow('Journey Planner API Error');
     });
 
@@ -325,7 +336,8 @@ describe('JourneyPlannerService', () => {
             legs: [
               {
                 transportation: {
-                  number: '7',
+                  number: 'Spårvagn 7',
+                  disassembledName: '7',
                   product: { name: 'Spårvagn' },
                   destination: { name: 'Spårvägsmuseet' },
                 },
@@ -355,7 +367,8 @@ describe('JourneyPlannerService', () => {
             legs: [
               {
                 transportation: {
-                  number: '36',
+                  number: 'Pendeltåg 36',
+                  disassembledName: '36',
                   product: { name: 'Pendeltåg' },
                   destination: { name: 'Nynäshamn' },
                 },
@@ -385,7 +398,8 @@ describe('JourneyPlannerService', () => {
             legs: [
               {
                 transportation: {
-                  number: 'Metro 19',
+                  number: 'tunnelbanans gröna linje 19',
+                  disassembledName: '19',
                   product: { name: 'Tunnelbana' },
                   destination: { name: 'Hässelby strand' },
                 },
@@ -403,7 +417,7 @@ describe('JourneyPlannerService', () => {
         json: async () => mockResponse,
       });
 
-      const result = await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['metro 19']);
+      const result = await journeyPlannerService.getJourneys('Bandhagen', 'Gullmarsplan', ['19']);
 
       expect(result.departures).toHaveLength(1);
     });

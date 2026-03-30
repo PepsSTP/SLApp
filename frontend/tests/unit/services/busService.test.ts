@@ -80,11 +80,11 @@ describe('busService', () => {
       };
       mockedAxios.get.mockResolvedValue({ data: mockResponse });
 
-      const result = await busService.getJourneys('Juliaborg', 'Gullmarsplan', '144,Metro 19');
+      const result = await busService.getJourneys('Juliaborg', 'Gullmarsplan', '144,19');
 
       expect(result).toEqual(mockResponse);
       expect(mockedAxios.get).toHaveBeenCalledWith(
-        '/api/journeys?origin=Juliaborg&destination=Gullmarsplan&lines=144%2CMetro+19'
+        '/api/journeys?origin=Juliaborg&destination=Gullmarsplan&lines=144%2C19'
       );
     });
 

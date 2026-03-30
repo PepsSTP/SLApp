@@ -21,7 +21,8 @@ export interface Journey {
  */
 export interface Leg {
   transportation: {
-    number: string;
+    number: string;         // full name, e.g. "Buss 163", "tunnelbanans gröna linje 19"
+    disassembledName: string; // short identifier, e.g. "163", "19"
     product: {
       name: string; // e.g. "Tunnelbana", "Buss"
     };

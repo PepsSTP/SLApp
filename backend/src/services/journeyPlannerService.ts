@@ -78,7 +78,7 @@ class JourneyPlannerService {
       }
 
       const leg = journey.legs[0];
-      const lineNumber = leg.transportation.number;
+      const lineNumber = leg.transportation.disassembledName;
 
       // Filter by requested lines
       if (!linesLower.includes(lineNumber.toLowerCase())) {

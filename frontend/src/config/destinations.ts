@@ -36,14 +36,14 @@ export const FROM_HOME_DESTINATIONS: DestinationGroup[] = [
     routes: [
       { line: "161", originStop: "Helgestavägen (på Årdalavägen)", destinationStop: "Murklevägen" },
       { line: "163", originStop: "Juliaborg", destinationStop: "Sockenplan" },
-      { line: "Metro 19", originStop: "Bandhagen", destinationStop: "Sockenplan" },
+      { line: "19", originStop: "Bandhagen", destinationStop: "Sockenplan" },
     ]
   },
   {
     displayName: "To Gullmarsplan",
     routes: [
       { line: "144", originStop: "Juliaborg", destinationStop: "Gullmarsplan" },
-      { line: "Metro 19", originStop: "Bandhagen", destinationStop: "Gullmarsplan" },
+      { line: "19", originStop: "Bandhagen", destinationStop: "Gullmarsplan" },
     ]
   }
 ];
@@ -56,7 +56,7 @@ export const TO_HOME_DESTINATIONS: DestinationGroup[] = [
   {
     displayName: "From Gullmarsplan",
     routes: [
-      { line: "Metro 19", originStop: "Gullmarsplan", destinationStop: "Bandhagen" },
+      { line: "19", originStop: "Gullmarsplan", destinationStop: "Bandhagen" },
       { line: "144", originStop: "Gullmarsplan", destinationStop: "Juliaborg" },
     ]
   },
@@ -74,7 +74,7 @@ export const TO_HOME_DESTINATIONS: DestinationGroup[] = [
     displayName: "From Enskede",
     routes: [
       { line: "163", originStop: "Sockenplan", destinationStop: "Juliaborg" },
-      { line: "Metro 19", originStop: "Sockenplan", destinationStop: "Bandhagen" },
+      { line: "19", originStop: "Sockenplan", destinationStop: "Bandhagen" },
       { line: "161", originStop: "Murklevägen", destinationStop: "Helgestavägen (på Årdalavägen)" },
     ]
   }

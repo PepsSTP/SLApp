@@ -157,7 +157,7 @@ describe('API Integration Tests', () => {
       destination: 'Gullmarsplan',
       departures: [
         {
-          line: 'Metro 19',
+          line: '19',
           destination: 'Hässelby strand',
           departureTime: '2024-01-15T10:32:00Z',
           scheduled: '2024-01-15T10:30:00Z',
