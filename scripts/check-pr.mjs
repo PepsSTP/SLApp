@@ -115,7 +115,7 @@ ${diffText.slice(0, 12000)}
 ---
 
 Your task:
-1. Find every acceptance criterion in the issue description (lines that look like "- [ ] ...").
+1. Find every acceptance criterion in the issue description. Criteria appear either as checkbox items ("- [ ] ...") or as plain bullet items ("- ...") under a "## Acceptance Criteria" heading.
 2. For each criterion, decide:
    - ✅ **Met** — the diff clearly implements it
    - ❌ **Not met** — the diff clearly does NOT implement it
@@ -189,9 +189,14 @@ async function main() {
     return;
   }
 
-  const hasCriteria = issue.description.includes('- [ ]');
+  // Accept both checkbox items ("- [ ]") and plain bullet items under an
+  // "## Acceptance Criteria" or "## Acceptance criteria" heading.
+  const hasCheckboxCriteria = issue.description.includes('- [ ]');
+  const hasSectionCriteria = /##\s*acceptance criteria/i.test(issue.description) &&
+    /\n- /i.test(issue.description.split(/##\s*acceptance criteria/i)[1] ?? '');
+  const hasCriteria = hasCheckboxCriteria || hasSectionCriteria;
   if (!hasCriteria) {
-    console.log('No acceptance criteria (- [ ] items) found in issue description — skipping review.');
+    console.log('No acceptance criteria (- [ ] items or bullet list under ## Acceptance Criteria) found in issue description — skipping review.');
     return;
   }
 
