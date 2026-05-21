@@ -10,6 +10,15 @@ interface DestinationGroupProps {
   onLoadMore?: () => void;
 }
 
+interface DepartureRowsProps {
+  departures: MergedDeparture[];
+  windowMinutes: number;
+  onShowMore: () => void;
+  onShowLess: () => void;
+  onLoadMore?: () => void;
+  onSelectDeparture: (d: MergedDeparture) => void;
+}
+
 const WINDOW_STEP = 30;
 const MAX_WINDOW = 60;
 
@@ -63,6 +72,59 @@ function shortenStopName(stopName: string): string {
   return match ? match[1].trim() : stopName;
 }
 
+function DepartureRows({ departures, windowMinutes, onShowMore, onShowLess, onLoadMore, onSelectDeparture }: DepartureRowsProps) {
+  const now = Date.now();
+  const windowMs = windowMinutes * 60 * 1000;
+  const upcoming = departures.filter(d => new Date(d.departureTime).getTime() > now);
+  const visible = upcoming.filter(d => new Date(d.departureTime).getTime() - now <= windowMs);
+  const hasMoreInWindow = windowMinutes < MAX_WINDOW && upcoming.some(d => new Date(d.departureTime).getTime() - now > windowMs);
+  const hasLess = windowMinutes > WINDOW_STEP;
+  const canShowMore = hasMoreInWindow || (!!onLoadMore && windowMinutes >= MAX_WINDOW);
+
+  if (upcoming.length === 0) {
+    return <div className="no-departures"><p>No upcoming departures</p></div>;
+  }
+
+  const handleShowMore = () => hasMoreInWindow ? onShowMore() : onLoadMore?.();
+
+  return (
+    <>
+      <ul className="departure-rows">
+        {visible.map((departure, index) => {
+          const diffMinutes = getMinutesUntil(departure.departureTime);
+          return (
+            <li
+              key={index}
+              className="departure-row departure-row--tappable"
+              role="button"
+              tabIndex={0}
+              onClick={() => onSelectDeparture(departure)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectDeparture(departure); } }}
+            >
+              <span className={`departure-time ${getUrgencyClass(diffMinutes)}`}>
+                {formatRelativeTime(diffMinutes)}
+              </span>
+              <span className={`line-badge ${getLineBadgeClass(departure.transportMode)}`}>
+                {formatLineName(departure.line)}
+              </span>
+              <span className="departure-origin">
+                <span className="departure-origin-name">{shortenStopName(departure.originStop)}</span>
+                <span className="departure-clock">{formatAbsoluteTime(departure.departureTime)}</span>
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      {(canShowMore || hasLess) && (
+        <div className="show-more-bar">
+          {hasLess && <button className="show-window-btn" onClick={onShowLess}>Show less</button>}
+          {canShowMore && <button className="show-window-btn" onClick={handleShowMore}>Show more</button>}
+        </div>
+      )}
+    </>
+  );
+}
+
 export function DestinationGroup({ groupResult, defaultCollapsed = false, onLoadMore }: DestinationGroupProps) {
   const { displayName, departures } = groupResult;
   const [windowMinutes, setWindowMinutes] = useState(WINDOW_STEP);
@@ -70,28 +132,9 @@ export function DestinationGroup({ groupResult, defaultCollapsed = false, onLoad
   const [selectedDeparture, setSelectedDeparture] = useState<MergedDeparture | null>(null);
 
   const now = Date.now();
-  const windowMs = windowMinutes * 60 * 1000;
-
-  const upcoming = departures.filter(d => new Date(d.departureTime).getTime() > now);
-  const visible = upcoming.filter(d => new Date(d.departureTime).getTime() - now <= windowMs);
-  const hasMoreInWindow = windowMinutes < MAX_WINDOW && upcoming.some(d => new Date(d.departureTime).getTime() - now > windowMs);
-  const hasLess = windowMinutes > WINDOW_STEP;
-
-  // "Show more" can either expand the time window or fetch more from the API
-  const canShowMore = hasMoreInWindow || (!!onLoadMore && windowMinutes >= MAX_WINDOW);
-
-  const handleShowMore = () => {
-    if (hasMoreInWindow) {
-      setWindowMinutes(w => w + WINDOW_STEP);
-    } else if (onLoadMore) {
-      onLoadMore();
-    }
-  };
-
-  // Summary for collapsed state: show the nearest departure time
-  const nextDeparture = upcoming.length > 0 ? getMinutesUntil(upcoming[0].departureTime) : null;
-  const summaryText = nextDeparture !== null
-    ? `Next: ${formatRelativeTime(nextDeparture)}`
+  const firstUpcoming = departures.find(d => new Date(d.departureTime).getTime() > now);
+  const summaryText = firstUpcoming
+    ? `Next: ${formatRelativeTime(getMinutesUntil(firstUpcoming.departureTime))}`
     : 'No departures';
 
   return (
@@ -111,57 +154,14 @@ export function DestinationGroup({ groupResult, defaultCollapsed = false, onLoad
       </button>
 
       {!collapsed && (
-        <>
-          {upcoming.length === 0 ? (
-            <div className="no-departures">
-              <p>No upcoming departures</p>
-            </div>
-          ) : (
-            <>
-              <ul className="departure-rows">
-                {visible.map((departure, index) => {
-                  const diffMinutes = getMinutesUntil(departure.departureTime);
-                  return (
-                    <li
-                      key={index}
-                      className="departure-row departure-row--tappable"
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setSelectedDeparture(departure)}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedDeparture(departure); } }}
-                    >
-                      <span className={`departure-time ${getUrgencyClass(diffMinutes)}`}>
-                        {formatRelativeTime(diffMinutes)}
-                      </span>
-                      <span className={`line-badge ${getLineBadgeClass(departure.transportMode)}`}>
-                        {formatLineName(departure.line)}
-                      </span>
-                      <span className="departure-origin">
-                        <span className="departure-origin-name">{shortenStopName(departure.originStop)}</span>
-                        <span className="departure-clock">{formatAbsoluteTime(departure.departureTime)}</span>
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
-
-              {(canShowMore || hasLess) && (
-                <div className="show-more-bar">
-                  {hasLess && (
-                    <button className="show-window-btn" onClick={() => setWindowMinutes(w => w - WINDOW_STEP)}>
-                      Show less
-                    </button>
-                  )}
-                  {canShowMore && (
-                    <button className="show-window-btn" onClick={handleShowMore}>
-                      Show more
-                    </button>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-        </>
+        <DepartureRows
+          departures={departures}
+          windowMinutes={windowMinutes}
+          onShowMore={() => setWindowMinutes(w => w + WINDOW_STEP)}
+          onShowLess={() => setWindowMinutes(w => w - WINDOW_STEP)}
+          onLoadMore={onLoadMore}
+          onSelectDeparture={setSelectedDeparture}
+        />
       )}
 
       {selectedDeparture && (

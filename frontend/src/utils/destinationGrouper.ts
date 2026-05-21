@@ -28,6 +28,40 @@ export function pairKey(origin: string, destination: string): string {
   return `${origin}|||${destination}`;
 }
 
+function buildLinesByPair(routes: DestinationGroup['routes']): Map<string, Set<string>> {
+  const linesByPair = new Map<string, Set<string>>();
+  for (const route of routes) {
+    const key = pairKey(route.originStop, route.destinationStop);
+    if (!linesByPair.has(key)) linesByPair.set(key, new Set());
+    linesByPair.get(key)!.add(route.line);
+  }
+  return linesByPair;
+}
+
+function collectDepartures(
+  journeysByPair: Map<string, JourneyResponse>,
+  linesByPair: Map<string, Set<string>>,
+): MergedDeparture[] {
+  const departures: MergedDeparture[] = [];
+  for (const [key, allowedLines] of linesByPair) {
+    const response = journeysByPair.get(key);
+    if (!response) continue;
+    for (const departure of response.departures) {
+      if (allowedLines.has(departure.line)) {
+        departures.push({
+          line: departure.line,
+          destination: departure.destination,
+          departureTime: departure.departureTime,
+          scheduled: departure.scheduled ?? departure.departureTime,
+          originStop: response.origin,
+          transportMode: departure.transportMode,
+        });
+      }
+    }
+  }
+  return departures;
+}
+
 /**
  * Groups journey responses into destination groups, merging and sorting by time.
  *
@@ -41,55 +75,17 @@ export function groupByDestination(
   destinationGroups: DestinationGroup[],
   maxDeparturesPerGroup: number = 30
 ): DestinationGroupResult[] {
-  const results: DestinationGroupResult[] = [];
+  return destinationGroups.map(destinationGroup => {
+    const linesByPair = buildLinesByPair(destinationGroup.routes);
+    const mergedDepartures = collectDepartures(journeysByPair, linesByPair);
 
-  for (const destinationGroup of destinationGroups) {
-    const mergedDepartures: MergedDeparture[] = [];
+    mergedDepartures.sort((a, b) =>
+      new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime()
+    );
 
-    // Collect allowed lines per origin+destination pair for this group
-    const linesByPair = new Map<string, Set<string>>();
-    for (const route of destinationGroup.routes) {
-      const key = pairKey(route.originStop, route.destinationStop);
-      if (!linesByPair.has(key)) {
-        linesByPair.set(key, new Set());
-      }
-      linesByPair.get(key)!.add(route.line);
-    }
-
-    // For each origin+destination pair used by this group, extract matching journeys
-    for (const [key, allowedLines] of linesByPair) {
-      const response = journeysByPair.get(key);
-      if (!response) continue;
-
-      for (const departure of response.departures) {
-        if (allowedLines.has(departure.line)) {
-          mergedDepartures.push({
-            line: departure.line,
-            destination: departure.destination,
-            departureTime: departure.departureTime,
-            scheduled: departure.scheduled ?? departure.departureTime,
-            originStop: response.origin,
-            transportMode: departure.transportMode,
-          });
-        }
-      }
-    }
-
-    // Sort merged departures by time (earliest first)
-    mergedDepartures.sort((a, b) => {
-      const timeA = new Date(a.departureTime).getTime();
-      const timeB = new Date(b.departureTime).getTime();
-      return timeA - timeB;
-    });
-
-    // Take only the first N departures
-    const limitedDepartures = mergedDepartures.slice(0, maxDeparturesPerGroup);
-
-    results.push({
+    return {
       displayName: destinationGroup.displayName,
-      departures: limitedDepartures,
-    });
-  }
-
-  return results;
+      departures: mergedDepartures.slice(0, maxDeparturesPerGroup),
+    };
+  });
 }

@@ -68,3 +68,15 @@ export async function setInReview(linear: LinearClient, issueId: string): Promis
     await linear.updateIssue(issueId, { stateId: inReview.id });
   }
 }
+
+export async function setTodo(linear: LinearClient, issueId: string): Promise<void> {
+  const issue = await linear.issue(issueId);
+  const team = await issue.team;
+  if (!team) return;
+
+  const states = await linear.workflowStates({ filter: { team: { id: { eq: team.id } } } });
+  const todo = states.nodes.find((s) => s.name === 'Todo');
+  if (todo) {
+    await linear.updateIssue(issueId, { stateId: todo.id });
+  }
+}

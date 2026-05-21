@@ -1,25 +1,9 @@
 import { query } from '@anthropic-ai/claude-agent-sdk';
-import { execSync } from 'child_process';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { exec, REPO_DIR } from './utils.js';
 import type { AgentIssue } from './types.js';
 
-const REPO_DIR = path.resolve(fileURLToPath(import.meta.url), '../../../');
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 40);
-}
-
-function exec(cmd: string): string {
-  return execSync(cmd, { cwd: REPO_DIR, encoding: 'utf-8' }).trim();
-}
-
-function buildPrompt(issue: AgentIssue): string {
-  return `You are working on SLApp. Your task is to implement the following Linear issue:
+function buildPrompt(issue: AgentIssue, previousFeedback?: string): string {
+  let prompt = `You are working on SLApp. Your task is to implement the following Linear issue:
 
 **${issue.identifier}: ${issue.title}**
 
@@ -30,35 +14,31 @@ ${issue.description ?? '(No description provided)'}
 Instructions:
 1. Read SPEC.md and README.md first to understand the project
 2. Implement the changes described in the issue
-3. Make sure both frontend and backend tests pass by running:
-   - \`cd backend && npm test\`
-   - \`cd frontend && npm test\`
-4. Fix any test failures before finishing
+3. Make sure both frontend and backend lint and tests pass by running:
+   - \`cd backend && npm run lint && npm test\`
+   - \`cd frontend && npm run lint && npm test\`
+4. Fix any lint errors or test failures before finishing
 5. Keep changes focused — only implement what the issue describes
-6. Commit your changes with \`git add\` and \`git commit\`. Do NOT push or create a PR — that is handled automatically after you finish.
+6. Commit your changes with \`git add\` and \`git commit\`. Do NOT push or create a PR.
 
 The issue URL for reference: ${issue.url}`;
+
+  if (previousFeedback) {
+    prompt += `\n\n---\n\n**A reviewer rejected your previous implementation. Fix these issues before committing:**\n\n${previousFeedback}`;
+  }
+
+  return prompt;
 }
 
-export async function developIssue(issue: AgentIssue): Promise<string> {
-  const branchName = `agent/${issue.identifier.toLowerCase()}-${slugify(issue.title)}`;
-
-  console.log(`\n🤖 Starting work on ${issue.identifier}: ${issue.title}`);
-  console.log(`📌 Branch: ${branchName}`);
-
-  // Create branch from latest main (clean up any leftover branch first)
-  exec('git checkout main');
-  exec('git pull origin main');
-  try { exec(`git branch -D ${branchName}`); } catch { /* branch didn't exist */ }
-  try { exec(`git push origin --delete ${branchName}`); } catch { /* not on remote */ }
-  exec(`git checkout -b ${branchName}`);
+export async function implement(issue: AgentIssue, previousFeedback?: string): Promise<void> {
+  console.log(`\n🤖 Developer implementing ${issue.identifier}: ${issue.title}`);
+  if (previousFeedback) console.log('   (incorporating reviewer feedback)');
 
   let queryError: unknown = null;
 
   try {
-    // Run the Claude agent
     for await (const message of query({
-      prompt: buildPrompt(issue),
+      prompt: buildPrompt(issue, previousFeedback),
       options: {
         cwd: REPO_DIR,
         allowedTools: ['Read', 'Write', 'Edit', 'Bash', 'Glob', 'Grep'],
@@ -70,58 +50,22 @@ The project has a React/Vite frontend and an Express backend, both in TypeScript
 Always read existing code before modifying it. Follow the existing code style.
 Run tests after implementing changes and fix any failures.
 Make clean, focused commits with descriptive messages.
-IMPORTANT: Do NOT push or create a pull request. Only implement, commit, and stop. The calling system handles push and PR creation.`,
+IMPORTANT: Do NOT push to remote or create a pull request. Only implement, commit, and stop.`,
       },
     })) {
       if ('result' in message) {
-        console.log(`\n✅ Agent finished: ${message.result.slice(0, 200)}`);
+        console.log(`\n✅ Developer finished: ${message.result.slice(0, 200)}`);
       }
     }
   } catch (err) {
-    // The SDK may throw "exited with code 1" even after the agent completed its work
-    // (e.g. max turns reached). Check if there are any new commits before giving up.
     queryError = err;
-    console.warn(`\n⚠️  Agent SDK error: ${err instanceof Error ? err.message : err}`);
+    console.warn(`\n⚠️  Developer SDK error: ${err instanceof Error ? err.message : err}`);
   }
 
-  // Check whether the agent committed any work on this branch
-  const newCommits = exec(`git log main..${branchName} --oneline`);
+  const newCommits = exec('git log main..HEAD --oneline');
   if (!newCommits) {
-    exec('git checkout main');
-    exec(`git branch -D ${branchName}`);
-    throw queryError ?? new Error('Agent produced no commits');
+    throw queryError ?? new Error('Developer produced no commits');
   }
 
-  console.log(`\n📦 Agent commits:\n${newCommits}`);
-
-  // Push branch (force in case a previous run left a stale remote branch)
-  exec(`git push --force origin ${branchName}`);
-
-  // Create PR via GitHub API
-  const prTitle = `${issue.identifier}: ${issue.title}`;
-  const prBody = `## Summary\n\nImplemented by dev agent from Linear issue [${issue.identifier}](${issue.url}).\n\n${issue.description ?? ''}\n\n## Test plan\n- [ ] Review the code changes\n- [ ] Run tests locally\n- [ ] Test in browser\n\n🤖 Generated by SLApp dev agent`;
-
-  const githubToken = process.env.GITHUB_TOKEN;
-  if (!githubToken) throw new Error('GITHUB_TOKEN environment variable is required');
-
-  const response = await fetch('https://api.github.com/repos/PepsSTP/SLApp/pulls', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${githubToken}`,
-      Accept: 'application/vnd.github+json',
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ title: prTitle, body: prBody, head: branchName, base: 'main' }),
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`GitHub API error ${response.status}: ${text}`);
-  }
-
-  const pr = await response.json() as { html_url: string };
-  const prUrl = pr.html_url;
-
-  console.log(`\n🔗 PR created: ${prUrl}`);
-  return prUrl;
+  console.log(`\n📦 Developer commits:\n${newCommits}`);
 }

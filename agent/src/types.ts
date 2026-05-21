@@ -6,3 +6,8 @@ export interface AgentIssue {
   url: string;
   teamId: string;
 }
+
+export interface ReviewResult {
+  approved: boolean;
+  feedback: string;
+}
