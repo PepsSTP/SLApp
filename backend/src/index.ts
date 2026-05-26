@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './config/swagger';
 import apiRoutes from './routes/api';
 import webhookRoutes from './routes/webhook';
 
@@ -52,6 +54,11 @@ app.get('/health', (_req: Request, res: Response) => {
     uptime: process.uptime()
   });
 });
+
+// Swagger UI — available in non-production environments
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+}
 
 // API routes
 app.use('/api', apiRoutes);
