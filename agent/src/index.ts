@@ -69,18 +69,25 @@ async function poll() {
 }
 
 async function main() {
-  console.log('🚀 SLApp dev agent started');
-  console.log(`   Polling every ${POLL_INTERVAL_MS / 1000}s\n`);
+  // AGENT_DAEMON=true → run forever with polling interval (local dev)
+  // default          → run once and exit (GitHub Actions)
+  const daemon = process.env.AGENT_DAEMON === 'true';
 
-  await poll();
-
-  setInterval(async () => {
-    try {
-      await poll();
-    } catch (err) {
-      console.error('Poll error:', err);
-    }
-  }, POLL_INTERVAL_MS);
+  if (daemon) {
+    console.log('🚀 SLApp dev agent started (daemon mode)');
+    console.log(`   Polling every ${POLL_INTERVAL_MS / 1000}s\n`);
+    await poll();
+    setInterval(async () => {
+      try {
+        await poll();
+      } catch (err) {
+        console.error('Poll error:', err);
+      }
+    }, POLL_INTERVAL_MS);
+  } else {
+    console.log('🚀 SLApp dev agent — single run');
+    await poll();
+  }
 }
 
 main().catch((err) => {

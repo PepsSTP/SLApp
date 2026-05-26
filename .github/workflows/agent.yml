@@ -1,0 +1,56 @@
+name: Dev Agent
+
+on:
+  repository_dispatch:
+    types: [linear-agent-issue]   # triggered by Linear webhook via Railway backend
+  schedule:
+    - cron: '0 8 * * *'           # daily fallback at 08:00 UTC to catch any missed webhooks
+  workflow_dispatch:               # manual trigger for testing
+
+permissions:
+  contents: write       # push agent branches
+  pull-requests: write  # create PRs
+
+# Only one agent run at a time. If triggered while already running, queue — do not cancel.
+concurrency:
+  group: agent-run
+  cancel-in-progress: false
+
+jobs:
+  run:
+    name: Run dev agent
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0  # full history so git log comparisons work correctly
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: agent/package-lock.json
+
+      - name: Install agent dependencies
+        working-directory: agent
+        run: npm ci
+
+      - name: Build agent
+        working-directory: agent
+        run: npm run build
+
+      - name: Configure git identity
+        run: |
+          git config user.email "agent@slapp.local"
+          git config user.name "SLApp Agent"
+
+      - name: Run agent
+        working-directory: agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          LINEAR_ACCESS_TOKEN: ${{ secrets.LINEAR_ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: node dist/index.js

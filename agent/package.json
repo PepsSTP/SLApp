@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "env -u CLAUDECODE DEBUG_CLAUDE_AGENT_SDK=1 PATH=\"$PWD/bin:$PATH\" tsx --env-file=.env src/index.ts",
+    "dev": "env -u CLAUDECODE AGENT_DAEMON=true DEBUG_CLAUDE_AGENT_SDK=1 PATH=\"$PWD/bin:$PATH\" tsx --env-file=.env src/index.ts",
     "build": "tsc",
     "start": "env -u CLAUDECODE PATH=\"$PWD/bin:$PATH\" node --env-file=.env dist/index.js"
   },

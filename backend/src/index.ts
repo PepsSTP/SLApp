@@ -5,12 +5,16 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
 import apiRoutes from './routes/api';
+import webhookRoutes from './routes/webhook';
 
 // Load environment variables
 dotenv.config();
 
 const app: Express = express();
 const port = process.env.PORT || 3001;
+
+// Railway sits behind a proxy — trust the first hop so rate-limit sees the real client IP
+app.set('trust proxy', 1);
 
 // Restrict CORS to the frontend origin
 const allowedOrigin = process.env.FRONTEND_URL || 'http://localhost:5173';
@@ -32,6 +36,11 @@ app.use(helmet()); // Security headers
 app.use(cors(corsOptions)); // Restricted CORS
 app.use(limiter); // Rate limiting
 app.use(morgan('dev')); // Logging
+
+// Webhook routes must be registered before express.json() so they can read
+// the raw request body for HMAC signature verification
+app.use('/webhook', webhookRoutes);
+
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
