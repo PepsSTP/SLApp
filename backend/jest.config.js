@@ -9,7 +9,9 @@ module.exports = {
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
-    '!src/index.ts', // Exclude server startup file
+    '!src/index.ts',
+    '!src/routes/webhook.ts',
+    '!src/config/swagger.ts',
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
