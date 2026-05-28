@@ -132,6 +132,8 @@ jobs:
         if: ${{ needs.build.result == 'success' && github.ref_name != 'main' }}
         uses: slackapi/slack-github-action@v3.0.3
         with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
           payload: |
             {
               "text": ":white_check_mark: *SLApp build passed*",
@@ -144,14 +146,13 @@ jobs:
                 ]
               }]
             }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
       - name: Notify deployment triggered (main only)
         if: ${{ needs.build.result == 'success' && github.ref_name == 'main' && github.event_name == 'push' }}
         uses: slackapi/slack-github-action@v3.0.3
         with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
           payload: |
             {
               "text": ":rocket: *SLApp deploying to production*",
@@ -165,14 +166,13 @@ jobs:
                 ]
               }]
             }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
 
       - name: Notify failure
         if: ${{ needs.backend-tests.result == 'failure' || needs.frontend-tests.result == 'failure' || needs.build.result == 'failure' }}
         uses: slackapi/slack-github-action@v3.0.3
         with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
           payload: |
             {
               "text": ":x: *SLApp build failed*",
@@ -188,6 +188,3 @@ jobs:
                 ]
               }]
             }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
