@@ -130,7 +130,7 @@ jobs:
 
       - name: Notify success (non-main)
         if: ${{ needs.build.result == 'success' && github.ref_name != 'main' }}
-        uses: slackapi/slack-github-action@v3.0.3
+        uses: slackapi/slack-github-action@v4.0.0
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
@@ -149,7 +149,7 @@ jobs:
 
       - name: Notify deployment triggered (main only)
         if: ${{ needs.build.result == 'success' && github.ref_name == 'main' && github.event_name == 'push' }}
-        uses: slackapi/slack-github-action@v3.0.3
+        uses: slackapi/slack-github-action@v4.0.0
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
@@ -169,7 +169,7 @@ jobs:
 
       - name: Notify failure
         if: ${{ needs.backend-tests.result == 'failure' || needs.frontend-tests.result == 'failure' || needs.build.result == 'failure' }}
-        uses: slackapi/slack-github-action@v3.0.3
+        uses: slackapi/slack-github-action@v4.0.0
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook
